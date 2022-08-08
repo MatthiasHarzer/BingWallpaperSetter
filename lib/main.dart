@@ -9,15 +9,48 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
-import 'package:open_file/open_file.dart';
+import 'package:optimize_battery/optimize_battery.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:workmanager/workmanager.dart';
 
+import 'consts.dart' as consts;
 import 'drawer.dart';
+
+/// The callback dispatcher for the workmanager background isolate
+void workManagerCallbackDispatcher() {
+  Workmanager().executeTask((task, inputData) async {
+    try {
+      await ConfigService.ensureInitialized();
+
+      Util.logToFile("Initialized ConfigService");
+
+      switch (task) {
+        case consts.BG_WALLPAPER_TASK_ID:
+          WallpaperInfo wallpaper =
+              await WallpaperService.getWallpaper(ConfigService.region);
+          await WallpaperService.setWallpaperFromUrl(
+              wallpaper.mobileUrl, ConfigService.wallpaperScreen);
+          ConfigService.bgWallpaperTaskLastRun =
+              DateTime.now().millisecondsSinceEpoch;
+          Util.logToFile("Set wallpaper successfully");
+      }
+    } catch (error) {
+      Util.logToFile(error.toString());
+    }
+
+    return true;
+  });
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await ConfigService.ensureInitialized();
+
+  await Workmanager()
+      .initialize(workManagerCallbackDispatcher, isInDebugMode: true);
+  await WallpaperService.checkAndSetBackgroundTaskState();
 
   runApp(const MyApp());
 }
@@ -31,19 +64,18 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Bing Daily Wallpaper',
       theme: ThemeData(
-          switchTheme: SwitchThemeData(
-            thumbColor: MaterialStateProperty.resolveWith((states) =>
-                states.contains(MaterialState.selected)
-                    ? Colors.deepPurpleAccent
-                    : null),
-            trackColor: MaterialStateProperty.resolveWith((states) =>
-                states.contains(MaterialState.selected)
-                    ? Colors.deepPurple[500]
-                    : null),
-          ),
-          primarySwatch: Colors.deepPurple,
-
-          brightness: Brightness.dark,
+        switchTheme: SwitchThemeData(
+          thumbColor: MaterialStateProperty.resolveWith((states) =>
+              states.contains(MaterialState.selected)
+                  ? Colors.deepPurpleAccent
+                  : null),
+          trackColor: MaterialStateProperty.resolveWith((states) =>
+              states.contains(MaterialState.selected)
+                  ? Colors.deepPurple[500]
+                  : null),
+        ),
+        primarySwatch: Colors.deepPurple,
+        brightness: Brightness.dark,
       ),
       home: const HomePage(),
     );
@@ -59,6 +91,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   WallpaperInfo? wallpaper;
+  TextStyle snackBarLinkStyle = const TextStyle(color: Colors.deepPurpleAccent);
 
   @override
   void initState() {
@@ -68,34 +101,74 @@ class _HomePageState extends State<HomePage> {
     _checkPermission();
   }
 
+  void _hideSnackBar() {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+  }
+
+  /// Shows a snackbar
+  void _showSnackBar({required Widget content, int seconds = 3}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: content,
+        backgroundColor: Colors.grey.shade900,
+        duration: Duration(seconds: seconds),
+      ),
+    );
+  }
+
   void _checkPermission() async {
     bool storagePermissionGranted = await _requestStoragePermission();
+    bool ignoreBatteryOptimizationGranted =
+        await _requestIgnoreBatteryOptimization();
+
+    if (!mounted) return;
 
     if (!storagePermissionGranted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            Container(
-              margin: const EdgeInsets.only(right: 10),
-              child: const SizedBox(
-                height: 10,
-                width: 10,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                ),
-              ),
-            ),
-            const Text(
-              "No storage permission! The app might not work properly.",
-              style: TextStyle(color: Colors.white),
-            ),
-          ],
+      _showSnackBar(
+        seconds: 120,
+        content: RichText(
+          text: TextSpan(
+            children: [
+              const TextSpan(
+                  text:
+                      "Storage permission denied. The app might not work correctly. "),
+              TextSpan(
+                  text: "Click here",
+                  style: snackBarLinkStyle,
+                  recognizer: TapGestureRecognizer()
+                    ..onTap = () async {
+                      openAppSettings();
+                      _hideSnackBar();
+                    }),
+              const TextSpan(text: " to open app settings.")
+            ],
+          ),
         ),
-        backgroundColor: Colors.grey.shade900,
-        duration: const Duration(seconds: 60),
-      ));
+      );
+    }
+
+    if (!ignoreBatteryOptimizationGranted) {
+      _showSnackBar(
+        seconds: 120,
+        content: RichText(
+          text: TextSpan(
+            children: [
+              const TextSpan(
+                  text:
+                      "Battery optimization might negatively influence the behavior of the app. "),
+              TextSpan(
+                  text: "Click here",
+                  style: snackBarLinkStyle,
+                  recognizer: TapGestureRecognizer()
+                    ..onTap = () async {
+                      OptimizeBattery.openBatteryOptimizationSettings();
+                      _hideSnackBar();
+                    }),
+              const TextSpan(text: " to open settings.")
+            ],
+          ),
+        ),
+      );
     }
   }
 
@@ -104,6 +177,19 @@ class _HomePageState extends State<HomePage> {
     final PermissionStatus permission = await Permission.storage.status;
     if (permission != PermissionStatus.granted) {
       if (await Permission.storage.request() != PermissionStatus.granted) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  Future<bool> _requestIgnoreBatteryOptimization() async {
+    final PermissionStatus status =
+        await Permission.ignoreBatteryOptimizations.status;
+
+    if (status != PermissionStatus.granted) {
+      if (await Permission.ignoreBatteryOptimizations.request() !=
+          PermissionStatus.granted) {
         return false;
       }
     }
@@ -121,6 +207,7 @@ class _HomePageState extends State<HomePage> {
     setState(() {});
   }
 
+  /// Sets the current wallpaper
   void _setWallpaper() async {
     if (wallpaper == null) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -135,7 +222,7 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+    _showSnackBar(
       content: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.start,
@@ -156,13 +243,9 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      backgroundColor: Colors.grey.shade900,
-      duration: const Duration(seconds: 60),
-    ));
+    );
 
     int start = DateTime.now().millisecondsSinceEpoch;
-
-    TextStyle linkStyle = const TextStyle(color: Colors.deepPurple);
 
     Object? error;
 
@@ -181,42 +264,50 @@ class _HomePageState extends State<HomePage> {
     }
 
     if (!mounted) return;
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    _hideSnackBar();
 
     if (error == null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      _showSnackBar(
         content: const Text(
           "Wallpaper set successfully",
           style: TextStyle(color: Colors.white),
         ),
-        backgroundColor: Colors.grey.shade900,
-        duration: const Duration(seconds: 3),
-      ));
+      );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      _showSnackBar(
         content: RichText(
-            text: TextSpan(children: [
-          const TextSpan(text: "An error occurred. See the "),
-          TextSpan(
-              text: "log.txt",
-              style: linkStyle,
-              recognizer: TapGestureRecognizer()
-                ..onTap = () async {
-                  String path = (await ConfigService.publicDirectory).path;
-                  print(path);
-                  var r = await OpenFile.open("$path/log.txt");
-                  print("${r.type} ${r.message}");
-                }),
-          const TextSpan(text: " file for detailed log.")
-        ])),
-        backgroundColor: Colors.grey.shade900,
-        duration: const Duration(seconds: 3),
-      ));
+          text: TextSpan(
+            children: [
+              const TextSpan(text: "An error occurred. See the "),
+              TextSpan(
+                  text: "log.txt",
+                  style: snackBarLinkStyle,
+                  recognizer: TapGestureRecognizer()
+                    ..onTap = () async {
+                      await Util.openLogFile();
+                    }),
+              const TextSpan(text: " file for detailed log.")
+            ],
+          ),
+        ),
+      );
     }
+  }
+
+  void _shareWallpaper() async {
+    if (wallpaper == null) {
+      _showSnackBar(content: const Text("Wallpaper not loaded yet."));
+      return;
+    }
+    var dir = await ConfigService.localDirectory;
+    var path = await Util.downloadFile(wallpaper!.mobileUrl, dir,
+        filename: "wallpaper.png");
+    Share.shareFiles([path], subject: wallpaper!.title);
   }
 
   /// Opens the info view of the current wallpaper
   void _openWallpaperInformationDialog() {
+    Navigator.pop(context);
     if (wallpaper == null) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: const Text(
@@ -263,11 +354,11 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _openAboutView(){
+  void _openAboutView() {
     Navigator.pop(context);
     showDialog(
-        context: context,
-        builder: (context)=>const AboutView(),
+      context: context,
+      builder: (context) => const AboutView(),
     );
   }
 
@@ -276,8 +367,11 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text(wallpaper?.title ?? ""),
-        backgroundColor: Colors.black12,
+        title: Tooltip(
+          message: wallpaper?.title ?? "",
+          child: Text(wallpaper?.title ?? ""),
+        ),
+        backgroundColor: Colors.black38,
       ),
       body: MainPageBody(
         wallpaper: wallpaper,
@@ -295,9 +389,15 @@ class _HomePageState extends State<HomePage> {
         elevation: 8.0,
         children: [
           SpeedDialChild(
-              label: "Set Wallpaper",
-              child: const Icon(Icons.wallpaper),
-              onTap: _setWallpaper)
+            label: "Set Wallpaper",
+            child: const Icon(Icons.wallpaper),
+            onTap: _setWallpaper,
+          ),
+          SpeedDialChild(
+            label: "Share",
+            child: const Icon(Icons.share),
+            onTap: _shareWallpaper,
+          ),
         ],
       ),
       drawer: MainPageDrawer(

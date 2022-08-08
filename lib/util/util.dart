@@ -2,9 +2,19 @@ import 'dart:io';
 
 import 'package:bing_wallpaper_setter/services/config_service.dart';
 import 'package:flutter/foundation.dart';
+import 'package:logger/logger.dart';
+import 'package:open_file/open_file.dart';
+import 'package:url_launcher/url_launcher.dart' as web;
+
+
+Logger  getLogger(){
+  return Logger(
+    level: Level.debug,
+  );
+}
 
 class Util{
-  /// Downloads a file from an [url] to a given [directory].
+  /// Downloads a file from an [url] to a given [directory]. Returns the files path.
   static Future<String> downloadFile(String url, Directory directory,
       {String filename = "snapshot.png"}) async {
     // WidgetsFlutterBinding.ensureInitialized();
@@ -31,8 +41,22 @@ class Util{
 
     message = _formatMessage(message);
 
-    print("logging $message");
     await file.writeAsString("$message\n", mode: FileMode.append);
-    print("logged");
+  }
+
+  /// Opens the given [url] in a browser window.
+  static void openUrl(String url){
+    web.launchUrl(Uri.parse(url), mode: web.LaunchMode.externalApplication);
+  }
+
+  /// Opens the log file in the explorer
+  static Future<void> openLogFile() async{
+    String path = (await ConfigService.publicDirectory).path;
+
+    if(!(await File("$path/log.txt").exists())){
+      await logToFile("This is the beginning of the log file.");
+    }
+
+    await OpenFile.open("$path/log.txt");
   }
 }

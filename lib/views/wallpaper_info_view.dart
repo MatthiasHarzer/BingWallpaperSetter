@@ -1,6 +1,7 @@
 import 'package:bing_wallpaper_setter/services/wallpaper_service.dart';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart' as web;
+
+import '../util/util.dart';
 
 /// The wallpaper info view. Shows title, copyright, etc
 class WallpaperInfoView extends StatelessWidget {
@@ -24,9 +25,8 @@ class WallpaperInfoView extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               MaterialButton(
-                onPressed: () async {
-                  await web
-                      .launchUrl(Uri.parse(wallpaper.copyrightlink));
+                onPressed: () {
+                  Util.openUrl(wallpaper.copyrightlink);
                 },
                 child: Container(
                   child: Row(
@@ -47,9 +47,8 @@ class WallpaperInfoView extends StatelessWidget {
                 ),
               ),
               MaterialButton(
-                onPressed: () async {
-                  await web
-                      .launchUrl(Uri.parse(wallpaper.fullSizeUrl));
+                onPressed: () {
+                  Util.openUrl(wallpaper.fullSizeUrl);
                 },
                 child: Container(
                   child: Row(

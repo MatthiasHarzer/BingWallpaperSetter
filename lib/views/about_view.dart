@@ -1,7 +1,8 @@
 import 'package:bing_wallpaper_setter/services/config_service.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart' as web;
+
+import '../util/util.dart';
 
 class AboutView extends StatelessWidget {
   const AboutView({Key? key}) : super(key: key);
@@ -40,7 +41,7 @@ class AboutView extends StatelessWidget {
                     style: highlightStyle,
                     recognizer: TapGestureRecognizer()
                       ..onTap = () async {
-                        web.launchUrl(Uri.parse("https://matthiasharzer.de/"));
+                        Util.openUrl("https://matthiasharzer.de/");
                       },
                   ),
                   const TextSpan(text: " with "),
@@ -49,7 +50,7 @@ class AboutView extends StatelessWidget {
                     style: highlightStyle,
                     recognizer: TapGestureRecognizer()
                       ..onTap = () async {
-                        web.launchUrl(Uri.parse("https://flutter.dev/"));
+                        Util.openUrl("https://flutter.dev");
                       },
                   ),
                 ],
@@ -62,9 +63,17 @@ class AboutView extends StatelessWidget {
           ),
           _buildItem(
             title: const Text("GitHub"),
-                subtitle: const Text("github.com/MatthiasHarzer/BingWallpaperSetter"),
-            onTap: ()=>web.launchUrl(Uri.parse("https://github.com/MatthiasHarzer/BingWallpaperSetter")),
-          )
+            subtitle:
+                const Text("github.com/MatthiasHarzer/BingWallpaperSetter"),
+            onTap: () => Util.openUrl(
+                "https://github.com/MatthiasHarzer/BingWallpaperSetter"),
+          ),
+          _buildItem(
+              title: const Text("Log File"),
+              subtitle: const Text("Tap to open the log file"),
+              onTap: () async {
+                await Util.openLogFile();
+              }),
         ],
       ),
     );

@@ -36,6 +36,9 @@ class _MainPageBodyState extends State<MainPageBody> {
       width: size.width,
       height: size.height,
       fit: BoxFit.cover,
+      progressIndicatorBuilder: (context, url, downloadProgress) => Center(
+        child:CircularProgressIndicator(value: downloadProgress.progress),
+      ),
     );
   }
 

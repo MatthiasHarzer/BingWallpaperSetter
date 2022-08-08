@@ -1,6 +1,7 @@
 import 'package:bing_wallpaper_setter/services/config_service.dart';
 import 'package:flutter/material.dart';
 
+import '../services/wallpaper_service.dart';
 
 class SettingsView extends StatefulWidget {
   const SettingsView({Key? key}) : super(key: key);
@@ -11,6 +12,12 @@ class SettingsView extends StatefulWidget {
 
 class _SettingsViewState extends State<SettingsView> {
   ThemeData get theme => Theme.of(context);
+
+  void _toggleDailyMode(bool enabled) async {
+    ConfigService.dailyModeEnabled = enabled;
+
+    await WallpaperService.checkAndSetBackgroundTaskState();
+  }
 
   Widget _buildSwitchItem(
       {required String title,
@@ -62,16 +69,14 @@ class _SettingsViewState extends State<SettingsView> {
   }
 
   /// Builds a header for a group of options
-  Widget _buildHeader({required String text}){
+  Widget _buildHeader({required String text}) {
     return ListTile(
       title: Text(
         text.toUpperCase(),
         style: const TextStyle(
-          color: Colors.deepPurpleAccent,
-          fontSize: 15,
-          fontWeight: FontWeight.w500
-        ),
-
+            color: Colors.deepPurpleAccent,
+            fontSize: 15,
+            fontWeight: FontWeight.w500),
       ),
     );
   }
@@ -91,8 +96,9 @@ class _SettingsViewState extends State<SettingsView> {
                 title: "Daily Mode",
                 subtitle: "Update the wallpaper once a day",
                 value: ConfigService.dailyModeEnabled,
-                onChanged: (v) =>
-                    setState(() => ConfigService.dailyModeEnabled = v),
+                onChanged: (v) => setState((){
+                  _toggleDailyMode(v);
+                }),
               ),
               _buildSelect(
                 title: "Select Region",

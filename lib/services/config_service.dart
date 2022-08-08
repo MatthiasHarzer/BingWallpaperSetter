@@ -13,6 +13,7 @@ const _WALLPAPER_SCREEN = "wallpaper_screen";
 const _DAILY_MODE_ENABLED = "daily_mode_enabled";
 const _WALLPAPER_RESOLUTION = "wallpaper_resolution";
 const _REGION = "region";
+const _BG_WALLPAPER_TASK_LAST_RUN = "bg_wallpaper_task_last_run";
 
 /// Provides key-val-storage like functionalities with device storage and configurations
 class ConfigService {
@@ -23,6 +24,7 @@ class ConfigService {
   static late String _wallpaperResolution;
   static late String _region;
   static late PackageInfo _packageInfo;
+  static late int _bgWallpaperTaskLastRun;
 
   static Future<void> ensureInitialized() async {
     if (Platform.isAndroid) {
@@ -41,6 +43,7 @@ class ConfigService {
     _dailyModeEnabled = _prefs.getBool(_DAILY_MODE_ENABLED) ?? false;
     _wallpaperResolution = _prefs.getString(_WALLPAPER_RESOLUTION) ?? availableResolutions.first;
     _region = _prefs.getString(_REGION) ?? availableRegions.keys.first;
+    _bgWallpaperTaskLastRun = _prefs.getInt(_BG_WALLPAPER_TASK_LAST_RUN) ?? 0;
 
     _packageInfo = await PackageInfo.fromPlatform();
   }
@@ -122,5 +125,12 @@ class ConfigService {
   static set region(String r) {
     _prefs.setString(_REGION, r);
     _region = r;
+  }
+
+  /// The time in ms when the bg task was executed last
+  static int get bgWallpaperTaskLastRun => _bgWallpaperTaskLastRun;
+  static set bgWallpaperTaskLastRun(int last){
+    _prefs.setInt(_BG_WALLPAPER_TASK_LAST_RUN, last);
+    _bgWallpaperTaskLastRun = last;
   }
 }
