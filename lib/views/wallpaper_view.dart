@@ -74,8 +74,7 @@ class _WallpaperViewState extends State<WallpaperView> {
     Object? error;
 
     try {
-      WallpaperService.setWallpaperFromUrl(
-          wallpaper!.mobileUrl, ConfigService.wallpaperScreen);
+      WallpaperService.setWallpaper(wallpaper!, ConfigService.wallpaperScreen);
     } catch (e) {
       error = e;
       await Util.logToFile(error.toString());
@@ -145,41 +144,13 @@ class _WallpaperViewState extends State<WallpaperView> {
   Widget _buildWallpaper() {
     final size = MediaQuery.of(context).size;
 
-    return RefreshIndicator(
-      displacement: 60,
-      onRefresh: () async {
-        if(widget.onUpdateWallpaper == null){
-          return Future.value();
-        }
-        bool updated = await widget.onUpdateWallpaper!();
-
-        if(!mounted) return;
-
-        if(updated){
-          Util.showSnackBar(context,
-              content: const Text("Wallpaper updated."),
-          );
-        }else{
-          Util.showSnackBar(context,
-            content: const Text("No new wallpaper."),
-          );
-        }
-      },
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          CachedNetworkImage(
-            imageUrl: widget.wallpaper!.mobileUrl,
-            width: size.width,
-            height: size.height,
-            fit: BoxFit.cover,
-            progressIndicatorBuilder: (context, url, downloadProgress) =>
-                Center(
-              child:
-                  CircularProgressIndicator(value: downloadProgress.progress),
-            ),
-          ),
-        ],
+    return CachedNetworkImage(
+      imageUrl: widget.wallpaper!.mobileUrl,
+      width: size.width,
+      height: size.height,
+      fit: BoxFit.cover,
+      progressIndicatorBuilder: (context, url, downloadProgress) => Center(
+        child: CircularProgressIndicator(value: downloadProgress.progress),
       ),
     );
   }
@@ -195,7 +166,35 @@ class _WallpaperViewState extends State<WallpaperView> {
         ),
         backgroundColor: Colors.black38,
       ),
-      body: wallpaper == null ? _buildSpinner() : _buildWallpaper(),
+      body: RefreshIndicator(
+        displacement: 80,
+        onRefresh: () async {
+          if (widget.onUpdateWallpaper == null) {
+            return Future.value();
+          }
+          bool updated = await widget.onUpdateWallpaper!();
+
+          if (!mounted) return;
+
+          if (updated) {
+            Util.showSnackBar(
+              context,
+              content: const Text("Wallpaper updated."),
+            );
+          } else {
+            Util.showSnackBar(
+              context,
+              content: const Text("No new wallpaper."),
+            );
+          }
+        },
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            wallpaper == null ? _buildSpinner() : _buildWallpaper(),
+          ],
+        ),
+      ),
       floatingActionButton: SpeedDial(
         animatedIcon: AnimatedIcons.menu_close,
         animatedIconTheme: const IconThemeData(size: 30),

@@ -9,25 +9,44 @@ import 'package:wallpaper_manager_flutter/wallpaper_manager_flutter.dart';
 import 'package:workmanager/workmanager.dart';
 
 import '../consts.dart' as consts;
-
 import '../util/util.dart';
 
-
-
 class WallpaperInfo {
-  final String baseUrl;
+  final String _bingEndpoint = "https//bing.com";
+
+  final String urlBase;
   final String copyright;
-  final String copyrightlink;
+  final String copyrightLink;
   final String title;
 
-  String get mobileUrl => "${baseUrl}_${ConfigService.wallpaperResolution}.jpg";
+  String get mobileUrl =>
+      "$_bingEndpoint${urlBase}_${ConfigService.wallpaperResolution}.jpg";
 
-  String get fullSizeUrl => "${baseUrl}_UHD.jpg";
+  String get fullSizeUrl => "$_bingEndpoint${urlBase}_UHD.jpg";
 
-  WallpaperInfo({required this.baseUrl,
-    required this.title,
-    required this.copyright,
-    required this.copyrightlink});
+  String get id => urlBase;
+
+  WallpaperInfo(
+      {required this.urlBase,
+      required this.title,
+      required this.copyright,
+      required this.copyrightLink});
+
+  @override
+  bool operator ==(other) {
+    if (other is! WallpaperInfo) {
+      return false;
+    }
+    return id == other.id;
+  }
+
+  int? _hashCode;
+
+  @override
+  int get hashCode {
+    _hashCode ??= id.hashCode;
+    return _hashCode!;
+  }
 }
 
 class WallpaperService {
@@ -41,29 +60,32 @@ class WallpaperService {
 
     String url = BASE_URL + local;
 
-    Response response = await get(
-        Uri.parse(url), headers: {"Accept": "application/json"});
+    Response response =
+        await get(Uri.parse(url), headers: {"Accept": "application/json"});
 
     var resJson = json.decode(response.body) as Map<String, dynamic>;
     var imageData = resJson["images"][0] as Map<String, dynamic>;
 
-    String baseUrl = "https://bing.com${imageData['urlbase']}";
+    String urlBase = imageData['urlbase'];
     String imageTitle = imageData["title"];
     String imageCopyright = imageData["copyright"];
     String imageCopyrightlink = imageData["copyrightlink"];
 
     return WallpaperInfo(
-      baseUrl: baseUrl,
+      urlBase: urlBase,
       title: imageTitle,
       copyright: imageCopyright,
-      copyrightlink: imageCopyrightlink,
+      copyrightLink: imageCopyrightlink,
     );
   }
 
   /// Sets the devices wallpaper from an [url]
-  static Future<void> setWallpaperFromUrl(String url, int screen) async {
+  static Future<void> setWallpaper(WallpaperInfo wallpaper, int screen) async {
+    String url = wallpaper.mobileUrl;
+
     String file = await Util.downloadFile(
-        url, await ConfigService.publicDirectory, filename: "wallpaper.png");
+        url, await ConfigService.publicDirectory,
+        filename: "wallpaper.png");
 
     // Because setting wallpaper for both screens doesn't work for some reason (tested on Huawei Mate 10 Pro)
     if (screen == WallpaperManagerFlutter.BOTH_SCREENS) {
@@ -75,6 +97,7 @@ class WallpaperService {
       WallpaperManagerFlutter().setwallpaperfromFile(File(file), screen);
     }
 
+    ConfigService.currentWallpaperId = wallpaper.id;
 
     // await WallpaperManager.setWallpaperFromFile(file, screen);
   }
@@ -83,6 +106,7 @@ class WallpaperService {
   static Future<void> _stopBackgroundTask() async {
     await Workmanager().cancelByTag(consts.BG_WALLPAPER_TASK_ID);
     _logger.d("Stopped background task");
+    Util.logToFile("Stopped background task");
   }
 
   /// Starts the background wallpaper update task
@@ -90,30 +114,26 @@ class WallpaperService {
     await Workmanager().registerPeriodicTask(
       consts.BG_WALLPAPER_TASK_ID,
       consts.BG_WALLPAPER_TASK_ID,
-      constraints: Constraints(
-          networkType: NetworkType.connected
-      ),
+      constraints: Constraints(networkType: NetworkType.connected),
       frequency: const Duration(hours: consts.BG_TASK_RECURRING_TIME),
       backoffPolicy: BackoffPolicy.linear,
       tag: consts.BG_WALLPAPER_TASK_ID,
+      existingWorkPolicy: ExistingWorkPolicy.replace,
     );
     _logger.d("Started background task");
+    Util.logToFile("Started background task");
   }
 
   /// Checks if a background task should run and starts or stops it if necessary
   static Future<void> checkAndSetBackgroundTaskState() async {
     bool enabled = ConfigService.dailyModeEnabled;
 
-    int now = DateTime
-        .now()
-        .millisecondsSinceEpoch;
+    int now = DateTime.now().millisecondsSinceEpoch;
 
     int lastRun = ConfigService.bgWallpaperTaskLastRun;
 
-    // This isn't a reliable method, cause when you disable daily mode for 2h and re-enable it and a
-    // bg task is started, and than this methods gets called, it thinks no task is running, but nvm.
-    bool taskRunning = (now - lastRun) <
-        consts.BG_TASK_RECURRING_TIMEOUT * 60 * 60 * 1000;
+    bool taskRunning =
+        (now - lastRun) < consts.BG_TASK_RECURRING_TIMEOUT * 60 * 60 * 1000;
 
     if (!enabled) {
       await _stopBackgroundTask();
@@ -121,12 +141,7 @@ class WallpaperService {
     }
 
     if (!taskRunning && enabled) {
-      await _stopBackgroundTask(); // Just to be safe
       await _startBackgroundTask();
     }
   }
-
-
 }
-
-

@@ -14,6 +14,7 @@ const _DAILY_MODE_ENABLED = "daily_mode_enabled";
 const _WALLPAPER_RESOLUTION = "wallpaper_resolution";
 const _REGION = "region";
 const _BG_WALLPAPER_TASK_LAST_RUN = "bg_wallpaper_task_last_run";
+const _CURRENT_WALLPAPER_ID = "current_wallpaper_id";
 
 /// Provides key-val-storage like functionalities with device storage and configurations
 class ConfigService {
@@ -25,6 +26,7 @@ class ConfigService {
   static late String _region;
   static late PackageInfo _packageInfo;
   static late int _bgWallpaperTaskLastRun;
+  static late String _currentWallpaperId;
 
   static Future<void> ensureInitialized() async {
     if (Platform.isAndroid) {
@@ -41,29 +43,29 @@ class ConfigService {
     _wallpaperScreen =
         _prefs.getInt(_WALLPAPER_SCREEN) ?? availableScreens.keys.first;
     _dailyModeEnabled = _prefs.getBool(_DAILY_MODE_ENABLED) ?? false;
-    _wallpaperResolution = _prefs.getString(_WALLPAPER_RESOLUTION) ?? availableResolutions.first;
+    _wallpaperResolution =
+        _prefs.getString(_WALLPAPER_RESOLUTION) ?? availableResolutions.first;
     _region = _prefs.getString(_REGION) ?? availableRegions.keys.first;
     _bgWallpaperTaskLastRun = _prefs.getInt(_BG_WALLPAPER_TASK_LAST_RUN) ?? 0;
+    _currentWallpaperId = _prefs.getString(_CURRENT_WALLPAPER_ID) ?? "";
 
     _packageInfo = await PackageInfo.fromPlatform();
   }
 
   /// A private directory to store data in. Not visible in the filesystem
-  static Future<Directory> get localDirectory => getApplicationDocumentsDirectory();
+  static Future<Directory> get localDirectory =>
+      getApplicationDocumentsDirectory();
 
   /// A directory to store data, visible in the filesystem. Only available on android.
   /// Falls back to [localDirectory] when on other platforms.
-  static Future<Directory> get publicDirectory async{
-    if(Platform.isAndroid) {
+  static Future<Directory> get publicDirectory async {
+    if (Platform.isAndroid) {
       return (await getExternalStorageDirectory())!;
     }
     return await getApplicationDocumentsDirectory();
-
   }
 
   static PackageInfo get packageInfo => _packageInfo;
-
-
 
   /// Available WallpaperScreens
   static final Map<int, String> availableScreens = {
@@ -93,7 +95,6 @@ class ConfigService {
     "ja-jp": "Japan",
     "es-es": "Spain",
   };
-
 
   /// The screens to apply wallpapers to
   static int get wallpaperScreen => _wallpaperScreen;
@@ -127,9 +128,18 @@ class ConfigService {
     _region = r;
   }
 
+  /// The id of the last applied wallpaper
+  static String get currentWallpaperId => _currentWallpaperId;
+
+  static set currentWallpaperId(String id) {
+    _prefs.setString(_CURRENT_WALLPAPER_ID, id);
+    _currentWallpaperId = id;
+  }
+
   /// The time in ms when the bg task was executed last
   static int get bgWallpaperTaskLastRun => _bgWallpaperTaskLastRun;
-  static set bgWallpaperTaskLastRun(int last){
+
+  static set bgWallpaperTaskLastRun(int last) {
     _prefs.setInt(_BG_WALLPAPER_TASK_LAST_RUN, last);
     _bgWallpaperTaskLastRun = last;
   }

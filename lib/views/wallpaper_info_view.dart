@@ -26,7 +26,7 @@ class WallpaperInfoView extends StatelessWidget {
             children: [
               MaterialButton(
                 onPressed: () {
-                  Util.openUrl(wallpaper.copyrightlink);
+                  Util.openUrl(wallpaper.copyrightLink);
                 },
                 child: Container(
                   child: Row(

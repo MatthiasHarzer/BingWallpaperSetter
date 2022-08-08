@@ -24,13 +24,15 @@ void workManagerCallbackDispatcher() {
 
       switch (task) {
         case consts.BG_WALLPAPER_TASK_ID:
-          WallpaperInfo wallpaper =
-              await WallpaperService.getWallpaper(ConfigService.region);
-          await WallpaperService.setWallpaperFromUrl(
-              wallpaper.mobileUrl, ConfigService.wallpaperScreen);
+          WallpaperInfo wallpaper = await WallpaperService.getWallpaper(ConfigService.region);
+
+          if(wallpaper.id != ConfigService.currentWallpaperId){
+            await WallpaperService.setWallpaper(wallpaper, ConfigService.wallpaperScreen);
+            Util.logToFile("Set wallpaper successfully");
+          }
           ConfigService.bgWallpaperTaskLastRun =
               DateTime.now().millisecondsSinceEpoch;
-          Util.logToFile("Set wallpaper successfully");
+
       }
     } catch (error) {
       Util.logToFile(error.toString());
@@ -179,7 +181,9 @@ class _HomePageState extends State<HomePage> {
 
     bool update = newWallpaper.mobileUrl != wallpaper?.mobileUrl;
 
-    wallpaper = newWallpaper;
+    setState((){
+      wallpaper = newWallpaper;
+    });
 
     return update;
   }
