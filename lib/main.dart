@@ -1,6 +1,5 @@
 import 'package:bing_wallpaper_setter/services/config_service.dart';
 import 'package:bing_wallpaper_setter/services/wallpaper_service.dart';
-import 'package:bing_wallpaper_setter/theme.dart' as theme;
 import 'package:bing_wallpaper_setter/util/util.dart';
 import 'package:bing_wallpaper_setter/views/about_view.dart';
 import 'package:bing_wallpaper_setter/views/settings_view.dart';
@@ -73,6 +72,11 @@ class MyApp extends StatelessWidget {
                   ? Colors.deepPurple[500]
                   : null),
         ),
+        snackBarTheme: SnackBarThemeData(
+          backgroundColor: Colors.grey.shade900,
+          contentTextStyle: const TextStyle(color: Colors.white),
+          actionTextColor: Colors.deepPurpleAccent,
+        ),
         primarySwatch: Colors.deepPurple,
         brightness: Brightness.dark,
       ),
@@ -112,48 +116,22 @@ class _HomePageState extends State<HomePage> {
 
     if (!storagePermissionGranted) {
       Util.showSnackBar(context,
-        seconds: 120,
-        content: RichText(
-          text: TextSpan(
-            children: [
-              const TextSpan(
-                  text:
-                      "Storage permission denied. The app might not work correctly. "),
-              TextSpan(
-                  text: "Click here",
-                  style: theme.snackBarLinkStyle,
-                  recognizer: TapGestureRecognizer()
-                    ..onTap = () async {
-                      openAppSettings();
-                      Util.hideSnackBar(context);
-                    }),
-              const TextSpan(text: " to open app settings.")
-            ],
-          ),
+        seconds: 30,
+        content: const Text("Storage permission denied. The app might not work correctly."),
+        action: SnackBarAction(
+            label: "OPEN APP SETTINGS",
+            onPressed: ()=>openAppSettings(),
         ),
       );
     }
 
     if (!ignoreBatteryOptimizationGranted) {
       Util.showSnackBar(context,
-        seconds: 120,
-        content: RichText(
-          text: TextSpan(
-            children: [
-              const TextSpan(
-                  text:
-                      "Battery optimization might negatively influence the behavior of the app. "),
-              TextSpan(
-                  text: "Click here",
-                  style: theme.snackBarLinkStyle,
-                  recognizer: TapGestureRecognizer()
-                    ..onTap = () async {
-                      OptimizeBattery.openBatteryOptimizationSettings();
-                      Util.hideSnackBar(context);
-                    }),
-              const TextSpan(text: " to open settings.")
-            ],
-          ),
+        seconds: 30,
+        content: const Text("Battery optimization might negatively influence the behavior of the app."),
+        action: SnackBarAction(
+            label: "OPEN SETTINGS",
+            onPressed: ()=>OptimizeBattery.openBatteryOptimizationSettings(),
         ),
       );
     }

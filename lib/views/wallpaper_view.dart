@@ -9,7 +9,6 @@ import 'package:share_plus/share_plus.dart';
 import '../services/config_service.dart';
 import '../util/util.dart';
 
-
 class WallpaperView extends StatefulWidget {
   final WallpaperInfo? wallpaper;
   final Widget? drawer;
@@ -27,7 +26,8 @@ class _WallpaperViewState extends State<WallpaperView> {
   /// Sets the current wallpaper
   void _setWallpaper() async {
     if (wallpaper == null) {
-      Util.showSnackBar(context,
+      Util.showSnackBar(
+        context,
         content: const Text(
           "Wallpaper not loaded yet! Please wait...",
           style: TextStyle(color: Colors.white),
@@ -37,7 +37,8 @@ class _WallpaperViewState extends State<WallpaperView> {
       return;
     }
 
-    Util.showSnackBar(context,
+    Util.showSnackBar(
+      context,
       content: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.start,
@@ -60,9 +61,7 @@ class _WallpaperViewState extends State<WallpaperView> {
       ),
     );
 
-    int start = DateTime
-        .now()
-        .millisecondsSinceEpoch;
+    int start = DateTime.now().millisecondsSinceEpoch;
 
     Object? error;
 
@@ -75,9 +74,7 @@ class _WallpaperViewState extends State<WallpaperView> {
     }
 
     // Show the initial snack bar for at least 1s
-    int diff = DateTime
-        .now()
-        .millisecondsSinceEpoch - start;
+    int diff = DateTime.now().millisecondsSinceEpoch - start;
     if (diff < 1000) {
       await Future.delayed(Duration(milliseconds: 1000 - diff));
     }
@@ -87,14 +84,16 @@ class _WallpaperViewState extends State<WallpaperView> {
     Util.hideSnackBar(context);
 
     if (error == null) {
-      Util.showSnackBar(context,
+      Util.showSnackBar(
+        context,
         content: const Text(
           "Wallpaper set successfully",
           style: TextStyle(color: Colors.white),
         ),
       );
     } else {
-      Util.showSnackBar(context,
+      Util.showSnackBar(
+        context,
         content: RichText(
           text: TextSpan(
             children: [
@@ -117,8 +116,8 @@ class _WallpaperViewState extends State<WallpaperView> {
   /// Downloads wallpaper and opens a share dialog
   void _shareWallpaper() async {
     if (wallpaper == null) {
-      Util.showSnackBar(
-          context, content: const Text("Wallpaper not loaded yet."));
+      Util.showSnackBar(context,
+          content: const Text("Wallpaper not loaded yet."));
       return;
     }
     var dir = await ConfigService.localDirectory;
@@ -127,20 +126,51 @@ class _WallpaperViewState extends State<WallpaperView> {
     Share.shareFiles([path], subject: wallpaper!.title);
   }
 
+  /// Builds a spinner, indicating that the wallpaper is loading
+  Widget _buildSpinner() {
+    return const Center(
+      child: CircularProgressIndicator(),
+    );
+  }
+
   /// Builds the wallpaper preview
   Widget _buildWallpaper() {
-    final size = MediaQuery
-        .of(context)
-        .size;
-    return CachedNetworkImage(
-      imageUrl: widget.wallpaper!.mobileUrl,
-      width: size.width,
-      height: size.height,
-      fit: BoxFit.cover,
-      progressIndicatorBuilder: (context, url, downloadProgress) =>
-          Center(
-            child: CircularProgressIndicator(value: downloadProgress.progress),
+    final size = MediaQuery.of(context).size;
+
+    // return CachedNetworkImage(
+    //   imageUrl: widget.wallpaper!.mobileUrl,
+    //   width: size.width,
+    //   height: size.height,
+    //   fit: BoxFit.cover,
+    //   progressIndicatorBuilder: (context, url, downloadProgress) =>
+    //       Center(
+    //         child:
+    //         CircularProgressIndicator(value: downloadProgress.progress),
+    //       ),
+    // );
+
+    return RefreshIndicator(
+      onRefresh: () {
+        print("REGRESS");
+
+        return Future.value();
+      },
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          CachedNetworkImage(
+            imageUrl: widget.wallpaper!.mobileUrl,
+            width: size.width,
+            height: size.height,
+            fit: BoxFit.cover,
+            progressIndicatorBuilder: (context, url, downloadProgress) =>
+                Center(
+              child:
+                  CircularProgressIndicator(value: downloadProgress.progress),
+            ),
           ),
+        ],
+      ),
     );
   }
 
@@ -155,7 +185,9 @@ class _WallpaperViewState extends State<WallpaperView> {
         ),
         backgroundColor: Colors.black38,
       ),
-      body: wallpaper == null ? const CircularProgressIndicator() : _buildWallpaper(),
+      body: wallpaper == null
+          ? _buildSpinner()
+          : _buildWallpaper(),
       floatingActionButton: SpeedDial(
         animatedIcon: AnimatedIcons.menu_close,
         animatedIconTheme: const IconThemeData(size: 30),

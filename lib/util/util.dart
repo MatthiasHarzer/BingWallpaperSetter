@@ -67,13 +67,14 @@ class Util{
   }
 
   /// Shows a snackbar
-  static void showSnackBar(BuildContext context, {required Widget content, int seconds = 3}) {
+  static void showSnackBar(BuildContext context, {required Widget content, SnackBarAction? action, int seconds = 3}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
+        action: action,
         content: content,
-        backgroundColor: Colors.grey.shade900,
         duration: Duration(seconds: seconds),
       ),
+
     );
   }
 }
