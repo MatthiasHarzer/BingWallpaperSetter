@@ -88,7 +88,7 @@ class ConfigService {
   static final Map<String, String> availableRegions = {
     "auto": "Auto",
     "en-us": "USA",
-    "en-gb": "Great Britain",
+    "en-gb": "UK",
     "de-de": "Germany",
     "fr-de": "France",
     "it-it": "Italy",

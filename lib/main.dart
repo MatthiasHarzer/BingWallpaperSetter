@@ -48,7 +48,7 @@ void main() async {
   await ConfigService.ensureInitialized();
 
   await Workmanager()
-      .initialize(workManagerCallbackDispatcher, isInDebugMode: true);
+      .initialize(workManagerCallbackDispatcher, isInDebugMode: false);
   await WallpaperService.checkAndSetBackgroundTaskState();
 
   runApp(const MyApp());
