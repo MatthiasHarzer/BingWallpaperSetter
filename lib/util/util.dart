@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:bing_wallpaper_setter/services/config_service.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:open_file/open_file.dart';
 import 'package:url_launcher/url_launcher.dart' as web;
@@ -58,5 +59,21 @@ class Util{
     }
 
     await OpenFile.open("$path/log.txt");
+  }
+
+  /// Hides the current snackbar
+  static void hideSnackBar(BuildContext context) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+  }
+
+  /// Shows a snackbar
+  static void showSnackBar(BuildContext context, {required Widget content, int seconds = 3}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: content,
+        backgroundColor: Colors.grey.shade900,
+        duration: Duration(seconds: seconds),
+      ),
+    );
   }
 }
