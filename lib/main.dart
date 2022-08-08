@@ -20,7 +20,6 @@ void workManagerCallbackDispatcher() {
     try {
       await ConfigService.ensureInitialized();
 
-      Util.logToFile("Initialized ConfigService");
 
       switch (task) {
         case consts.BG_WALLPAPER_TASK_ID:
@@ -28,7 +27,6 @@ void workManagerCallbackDispatcher() {
 
           if(wallpaper.id != ConfigService.currentWallpaperId){
             await WallpaperService.setWallpaper(wallpaper, ConfigService.wallpaperScreen);
-            Util.logToFile("Set wallpaper successfully");
           }
           ConfigService.bgWallpaperTaskLastRun =
               DateTime.now().millisecondsSinceEpoch;
@@ -95,12 +93,13 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   WallpaperInfo? wallpaper;
+  var logger = getLogger();
 
   @override
   void initState() {
     super.initState();
 
-    _loadWallpaper();
+    _updateWallpaper();
     _checkPermission();
   }
 
@@ -163,17 +162,6 @@ class _HomePageState extends State<HomePage> {
     return true;
   }
 
-  /// Loads the current wallpaper to the preview
-  void _loadWallpaper() async {
-    wallpaper = await WallpaperService.getWallpaper(ConfigService.region);
-
-    if (kDebugMode) {
-      print("Got wallpaper: $wallpaper");
-    }
-
-    setState(() {});
-  }
-
   /// Checks for wallpaper updates and sets the wallpaper variable. Returns true if update or false if now update is present
   Future<bool> _updateWallpaper() async {
     WallpaperInfo newWallpaper =
@@ -184,6 +172,10 @@ class _HomePageState extends State<HomePage> {
     setState((){
       wallpaper = newWallpaper;
     });
+
+    if(update){
+      logger.d("Updated wallpaper: $wallpaper");
+    }
 
     return update;
   }

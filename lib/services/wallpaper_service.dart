@@ -12,7 +12,7 @@ import '../consts.dart' as consts;
 import '../util/util.dart';
 
 class WallpaperInfo {
-  final String _bingEndpoint = "https//bing.com";
+  final String _bingEndpoint = "https://bing.com";
 
   final String urlBase;
   final String copyright;
@@ -46,6 +46,11 @@ class WallpaperInfo {
   int get hashCode {
     _hashCode ??= id.hashCode;
     return _hashCode!;
+  }
+
+  @override
+  String toString(){
+    return "WallpaperInfo(id=$id, title=$title, mobileUrl=$mobileUrl)";
   }
 }
 

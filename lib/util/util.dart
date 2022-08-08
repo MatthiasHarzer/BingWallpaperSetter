@@ -7,10 +7,20 @@ import 'package:logger/logger.dart';
 import 'package:open_file/open_file.dart';
 import 'package:url_launcher/url_launcher.dart' as web;
 
+class FileLogOutput extends LogOutput{
+  @override
+  void output(OutputEvent event){
+    for(var line in event.lines){
+      Util.logToFile(line);
+    }
+  }
+}
 
-Logger  getLogger(){
+Logger getLogger(){
   return Logger(
+    printer: PrefixPrinter(PrettyPrinter()),
     level: Level.debug,
+    output: MultiOutput([FileLogOutput(), ConsoleOutput()])
   );
 }
 
