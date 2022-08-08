@@ -1,6 +1,7 @@
 import 'package:bing_wallpaper_setter/services/wallpaper_service.dart';
 import 'package:bing_wallpaper_setter/theme.dart' as theme;
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
@@ -9,11 +10,18 @@ import 'package:share_plus/share_plus.dart';
 import '../services/config_service.dart';
 import '../util/util.dart';
 
+typedef AsyncBoolCallback = Future<bool> Function();
+
 class WallpaperView extends StatefulWidget {
   final WallpaperInfo? wallpaper;
   final Widget? drawer;
+  final AsyncBoolCallback? onUpdateWallpaper;
 
-  const WallpaperView({Key? key, required this.wallpaper, required this.drawer})
+  const WallpaperView(
+      {Key? key,
+      required this.wallpaper,
+      required this.drawer,
+      this.onUpdateWallpaper})
       : super(key: key);
 
   @override
@@ -137,23 +145,25 @@ class _WallpaperViewState extends State<WallpaperView> {
   Widget _buildWallpaper() {
     final size = MediaQuery.of(context).size;
 
-    // return CachedNetworkImage(
-    //   imageUrl: widget.wallpaper!.mobileUrl,
-    //   width: size.width,
-    //   height: size.height,
-    //   fit: BoxFit.cover,
-    //   progressIndicatorBuilder: (context, url, downloadProgress) =>
-    //       Center(
-    //         child:
-    //         CircularProgressIndicator(value: downloadProgress.progress),
-    //       ),
-    // );
-
     return RefreshIndicator(
-      onRefresh: () {
-        print("REGRESS");
+      displacement: 60,
+      onRefresh: () async {
+        if(widget.onUpdateWallpaper == null){
+          return Future.value();
+        }
+        bool updated = await widget.onUpdateWallpaper!();
 
-        return Future.value();
+        if(!mounted) return;
+
+        if(updated){
+          Util.showSnackBar(context,
+              content: const Text("Wallpaper updated."),
+          );
+        }else{
+          Util.showSnackBar(context,
+            content: const Text("No new wallpaper."),
+          );
+        }
       },
       child: ListView(
         padding: EdgeInsets.zero,
@@ -185,9 +195,7 @@ class _WallpaperViewState extends State<WallpaperView> {
         ),
         backgroundColor: Colors.black38,
       ),
-      body: wallpaper == null
-          ? _buildSpinner()
-          : _buildWallpaper(),
+      body: wallpaper == null ? _buildSpinner() : _buildWallpaper(),
       floatingActionButton: SpeedDial(
         animatedIcon: AnimatedIcons.menu_close,
         animatedIconTheme: const IconThemeData(size: 30),

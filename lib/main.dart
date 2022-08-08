@@ -6,7 +6,6 @@ import 'package:bing_wallpaper_setter/views/settings_view.dart';
 import 'package:bing_wallpaper_setter/views/wallpaper_info_view.dart';
 import 'package:bing_wallpaper_setter/views/wallpaper_view.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:optimize_battery/optimize_battery.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -95,7 +94,6 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   WallpaperInfo? wallpaper;
 
-
   @override
   void initState() {
     super.initState();
@@ -103,8 +101,6 @@ class _HomePageState extends State<HomePage> {
     _loadWallpaper();
     _checkPermission();
   }
-
-
 
   /// Checks for required permission
   void _checkPermission() async {
@@ -115,23 +111,27 @@ class _HomePageState extends State<HomePage> {
     if (!mounted) return;
 
     if (!storagePermissionGranted) {
-      Util.showSnackBar(context,
+      Util.showSnackBar(
+        context,
         seconds: 30,
-        content: const Text("Storage permission denied. The app might not work correctly."),
+        content: const Text(
+            "Storage permission denied. The app might not work correctly."),
         action: SnackBarAction(
-            label: "OPEN APP SETTINGS",
-            onPressed: ()=>openAppSettings(),
+          label: "OPEN APP SETTINGS",
+          onPressed: () => openAppSettings(),
         ),
       );
     }
 
     if (!ignoreBatteryOptimizationGranted) {
-      Util.showSnackBar(context,
+      Util.showSnackBar(
+        context,
         seconds: 30,
-        content: const Text("Battery optimization might negatively influence the behavior of the app."),
+        content: const Text(
+            "Battery optimization might negatively influence the behavior of the app."),
         action: SnackBarAction(
-            label: "OPEN SETTINGS",
-            onPressed: ()=>OptimizeBattery.openBatteryOptimizationSettings(),
+          label: "OPEN SETTINGS",
+          onPressed: () => OptimizeBattery.openBatteryOptimizationSettings(),
         ),
       );
     }
@@ -170,6 +170,18 @@ class _HomePageState extends State<HomePage> {
     }
 
     setState(() {});
+  }
+
+  /// Checks for wallpaper updates and sets the wallpaper variable. Returns true if update or false if now update is present
+  Future<bool> _updateWallpaper() async {
+    WallpaperInfo newWallpaper =
+        await WallpaperService.getWallpaper(ConfigService.region);
+
+    bool update = newWallpaper.mobileUrl != wallpaper?.mobileUrl;
+
+    wallpaper = newWallpaper;
+
+    return update;
   }
 
   /// Opens the info view of the current wallpaper
@@ -233,6 +245,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return WallpaperView(
       wallpaper: wallpaper,
+      onUpdateWallpaper: _updateWallpaper,
       drawer: MainPageDrawer(
         header: wallpaper?.copyright ?? "A Bing Image",
         onInformationTap: _openWallpaperInformationDialog,

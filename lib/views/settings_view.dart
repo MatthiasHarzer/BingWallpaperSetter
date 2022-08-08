@@ -38,6 +38,7 @@ class _SettingsViewState extends State<SettingsView> {
   /// Builds a dropdown select menu option
   Widget _buildSelect<T>(
       {required String title,
+        String? subtitle,
       required T value,
       required Function(T) onChanged,
       required Map<T, String> options}) {
@@ -53,6 +54,7 @@ class _SettingsViewState extends State<SettingsView> {
     final GlobalKey dropDownKey = GlobalKey();
     return ListTile(
       title: Text(title),
+      subtitle: subtitle != null ? Text(subtitle) : null,
       trailing: DropdownButton(
         key: dropDownKey,
         value: value,
