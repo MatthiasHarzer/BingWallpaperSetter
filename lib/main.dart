@@ -5,7 +5,6 @@ import 'package:bing_wallpaper_setter/views/about_view.dart';
 import 'package:bing_wallpaper_setter/views/settings_view.dart';
 import 'package:bing_wallpaper_setter/views/wallpaper_info_view.dart';
 import 'package:bing_wallpaper_setter/views/wallpaper_view.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:optimize_battery/optimize_battery.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -17,23 +16,29 @@ import 'drawer.dart';
 /// The callback dispatcher for the workmanager background isolate
 void workManagerCallbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
+    var logger = getLogger();
+    logger.d("Running background task");
     try {
       await ConfigService.ensureInitialized();
 
-
       switch (task) {
         case consts.BG_WALLPAPER_TASK_ID:
-          WallpaperInfo wallpaper = await WallpaperService.getWallpaper(ConfigService.region);
+          if(!ConfigService.dailyModeEnabled) break;
 
-          if(wallpaper.id != ConfigService.currentWallpaperId){
-            await WallpaperService.setWallpaper(wallpaper, ConfigService.wallpaperScreen);
-          }
+          WallpaperInfo wallpaper = await WallpaperService.getWallpaper(local: ConfigService.region);
+
+          await WallpaperService.ensureDownloaded(wallpaper);
+
+          await WallpaperService.setWallpaper(wallpaper, ConfigService.wallpaperScreen);
+
+          logger.d("Wallpaper updated!");
+
           ConfigService.bgWallpaperTaskLastRun =
               DateTime.now().millisecondsSinceEpoch;
 
       }
     } catch (error) {
-      Util.logToFile(error.toString());
+      logger.e(error.toString());
     }
 
     return true;
@@ -44,9 +49,10 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await ConfigService.ensureInitialized();
+  await WallpaperService.ensureMaxCacheWallpapers();
 
   await Workmanager()
-      .initialize(workManagerCallbackDispatcher, isInDebugMode: false);
+      .initialize(workManagerCallbackDispatcher, isInDebugMode: true);
   await WallpaperService.checkAndSetBackgroundTaskState();
 
   runApp(const MyApp());
@@ -162,10 +168,10 @@ class _HomePageState extends State<HomePage> {
     return true;
   }
 
-  /// Checks for wallpaper updates and sets the wallpaper variable. Returns true if update or false if now update is present
+  /// Checks for wallpaper updates and sets the wallpaper variable. Returns true if updated or false if now update is present
   Future<bool> _updateWallpaper() async {
-    WallpaperInfo newWallpaper =
-        await WallpaperService.getWallpaper(ConfigService.region);
+    WallpaperInfo newWallpaper = await WallpaperService.getWallpaper(local: ConfigService.region);
+    await WallpaperService.ensureDownloaded(newWallpaper);
 
     bool update = newWallpaper.mobileUrl != wallpaper?.mobileUrl;
 

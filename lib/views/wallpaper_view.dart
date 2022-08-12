@@ -127,10 +127,8 @@ class _WallpaperViewState extends State<WallpaperView> {
           content: const Text("Wallpaper not loaded yet."));
       return;
     }
-    var dir = await ConfigService.localDirectory;
-    var path = await Util.downloadFile(wallpaper!.mobileUrl, dir,
-        filename: "wallpaper.png");
-    Share.shareFiles([path], subject: wallpaper!.title);
+    await WallpaperService.ensureDownloaded(wallpaper!);
+    Share.shareFiles([(await wallpaper!.file).path], subject: wallpaper!.title);
   }
 
   /// Builds a spinner, indicating that the wallpaper is loading

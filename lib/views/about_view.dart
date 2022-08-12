@@ -69,11 +69,18 @@ class AboutView extends StatelessWidget {
                 "https://github.com/MatthiasHarzer/BingWallpaperSetter"),
           ),
           _buildItem(
-              title: const Text("Log File"),
-              subtitle: const Text("Tap to open the log file"),
-              onTap: () async {
-                await Util.openLogFile();
-              }),
+            title: const Text("Log File"),
+            subtitle: const Text("Tap to open the log file"),
+            onTap: () async {
+              await Util.openLogFile();
+            },
+          ),
+          _buildItem(
+            title: const Text("Background Task Last Run"),
+            subtitle: Text(
+              Util.tsToFormattedTime(ConfigService.bgWallpaperTaskLastRun),
+            ),
+          ),
         ],
       ),
     );

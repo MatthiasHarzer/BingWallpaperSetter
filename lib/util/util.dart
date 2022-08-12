@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:bing_wallpaper_setter/services/config_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import 'package:open_file/open_file.dart';
 import 'package:url_launcher/url_launcher.dart' as web;
@@ -16,11 +17,19 @@ class FileLogOutput extends LogOutput{
   }
 }
 
+class Printer extends LogPrinter{
+  @override
+  List<String> log(LogEvent event){
+    return [event.message];
+  }
+}
+
 Logger getLogger(){
   return Logger(
-    printer: PrefixPrinter(PrettyPrinter()),
+    printer: Printer(),
     level: Level.debug,
-    output: MultiOutput([FileLogOutput(), ConsoleOutput()])
+    output: MultiOutput([FileLogOutput(), ConsoleOutput()]),
+    filter: ProductionFilter(), // For now
   );
 }
 
@@ -39,6 +48,7 @@ class Util{
     return file.uri.path;
 
   }
+
 
   static String _formatMessage(String msg){
     var date = DateTime.now();
@@ -86,5 +96,18 @@ class Util{
       ),
 
     );
+  }
+
+  /// Returns a list of files contained in the [directory] matching the [regExp]
+  static List<FileSystemEntity> listDir(Directory directory, {RegExp? regExp}){
+    final entities = directory.listSync();
+    return (regExp == null ? entities : entities.where((element) => regExp.hasMatch(element.uri.pathSegments.last))).toList();
+
+  }
+
+  static String tsToFormattedTime(int ts){
+    DateTime date = DateTime.fromMillisecondsSinceEpoch(ts);
+    final DateFormat formatter = DateFormat('dd.MM.yyyy hh:mm:ss');
+    return formatter.format(date);
   }
 }

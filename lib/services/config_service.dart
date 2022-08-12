@@ -65,6 +65,9 @@ class ConfigService {
     return await getApplicationDocumentsDirectory();
   }
 
+  /// The directory to store wallpapers in
+  static Future<Directory> get wallpaperCacheDir => publicDirectory;
+
   static PackageInfo get packageInfo => _packageInfo;
 
   /// Available WallpaperScreens
