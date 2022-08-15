@@ -15,6 +15,8 @@ const _WALLPAPER_RESOLUTION = "wallpaper_resolution";
 const _REGION = "region";
 const _BG_WALLPAPER_TASK_LAST_RUN = "bg_wallpaper_task_last_run";
 const _CURRENT_WALLPAPER_ID = "current_wallpaper_id";
+const _CURRENT_WALLPAPER_DAY = "current_wallpaper_day";
+const _NEWEST_WALLPAPER_DAY = "newest_wallpaper_day";
 
 /// Provides key-val-storage like functionalities with device storage and configurations
 class ConfigService {
@@ -27,6 +29,8 @@ class ConfigService {
   static late PackageInfo _packageInfo;
   static late int _bgWallpaperTaskLastRun;
   static late String _currentWallpaperId;
+  static late String _currentWallpaperDay;
+  static late String _newestWallpaperDay;
 
   static Future<void> ensureInitialized() async {
     if (Platform.isAndroid) {
@@ -48,6 +52,8 @@ class ConfigService {
     _region = _prefs.getString(_REGION) ?? availableRegions.keys.first;
     _bgWallpaperTaskLastRun = _prefs.getInt(_BG_WALLPAPER_TASK_LAST_RUN) ?? 0;
     _currentWallpaperId = _prefs.getString(_CURRENT_WALLPAPER_ID) ?? "";
+    _currentWallpaperDay = _prefs.getString(_CURRENT_WALLPAPER_DAY) ?? "";
+    _newestWallpaperDay = _prefs.getString(_NEWEST_WALLPAPER_DAY) ?? "";
 
     _packageInfo = await PackageInfo.fromPlatform();
   }
@@ -137,6 +143,22 @@ class ConfigService {
   static set currentWallpaperId(String id) {
     _prefs.setString(_CURRENT_WALLPAPER_ID, id);
     _currentWallpaperId = id;
+  }
+
+  /// The day of the last applied wallpaper
+  static String get currentWallpaperDay => _currentWallpaperDay;
+
+  static set currentWallpaperDay(String day) {
+    _prefs.setString(_CURRENT_WALLPAPER_DAY, day);
+    _currentWallpaperDay = day;
+  }
+
+  /// The day of the newest ever applied wallpaper
+  static String get newestWallpaperDay => _newestWallpaperDay;
+
+  static set newestWallpaperDay(String day) {
+    _prefs.setString(_NEWEST_WALLPAPER_DAY, day);
+    _newestWallpaperDay = day;
   }
 
   /// The time in ms when the bg task was executed last

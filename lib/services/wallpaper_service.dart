@@ -6,16 +6,18 @@ import 'package:bing_wallpaper_setter/extensions/file.dart';
 import 'package:bing_wallpaper_setter/services/config_service.dart';
 import 'package:devicelocale/devicelocale.dart';
 import 'package:http/http.dart';
-import 'package:intl/intl.dart';
 import 'package:wallpaper_manager_flutter/wallpaper_manager_flutter.dart';
 import 'package:workmanager/workmanager.dart';
 
 import '../consts.dart' as consts;
 import '../util/util.dart';
 
+// DateTime _dayFromString(String day){
+//
+// }
+
 String _toFormattedWallpaperName(DateTime day) {
-  final DateFormat formatter = DateFormat('yyyy-MM-dd');
-  return "wallpaper_${formatter.format(day)}.jpg";
+  return "wallpaper_${Util.formatDay(day)}.jpg";
 }
 
 /// Returns the wallpaper save file
@@ -43,6 +45,8 @@ class WallpaperInfo {
 
   /// The file where the wallpaper image is saved on the device
   Future<File> get file => _getWallpaperFile(day);
+
+  Future<bool> get isDownloaded async => (await file).exists();
 
   WallpaperInfo(
       {required this.urlBase,
@@ -109,15 +113,45 @@ class WallpaperService {
 
   /// Ensures the given wallpaper is downloaded to the device
   static Future<void> ensureDownloaded(WallpaperInfo wallpaperInfo) async {
-    if ((await wallpaperInfo.file).existsSync()) {
+    if (await wallpaperInfo.isDownloaded) {
       _logger.d("${wallpaperInfo.mobileUrl} already downloaded");
       return;
     }
     _logger.d("Downloading ${wallpaperInfo.mobileUrl}");
-      await Util.downloadFile(
-          wallpaperInfo.mobileUrl, await ConfigService.wallpaperCacheDir,
-          filename: _toFormattedWallpaperName(wallpaperInfo.day));
+    await Util.downloadFile(
+        wallpaperInfo.mobileUrl, await ConfigService.wallpaperCacheDir,
+        filename: _toFormattedWallpaperName(wallpaperInfo.day));
+  }
 
+  /// Gets a list of wallpapers from bing where [n] is the number of wp to fetch
+  static Future<List<WallpaperInfo>> _getWallpapersFromBing(
+      {String local = "auto", int n = 1}) async {
+    if (local == "auto") {
+      local = (await Devicelocale.currentLocale).toString();
+    }
+    String url = "$BASE_URL$local&n=$n";
+    var now = Util.normalizeDate(DateTime.now());
+
+    _logger.d("Requesting $url");
+
+    Response response =
+        await get(Uri.parse(url), headers: {"Accept": "application/json"});
+
+    var resJson = json.decode(response.body) as Map<String, dynamic>;
+    List rawImages = resJson["images"] as List;
+    List<WallpaperInfo> images = [];
+
+    for (var data in rawImages) {
+      images.add(WallpaperInfo(
+          urlBase: data["urlbase"],
+          title: data["title"],
+          copyright: data["copyright"],
+          copyrightLink: data["copyrightlink"],
+          day: now));
+      now = now.subtract(const Duration(days: 1));
+    }
+
+    return images;
   }
 
   /// Gets the current wallpaper info
@@ -126,26 +160,7 @@ class WallpaperService {
       local = (await Devicelocale.currentLocale).toString();
     }
 
-    String url = BASE_URL + local;
-
-    Response response =
-        await get(Uri.parse(url), headers: {"Accept": "application/json"});
-
-    var resJson = json.decode(response.body) as Map<String, dynamic>;
-    var imageData = resJson["images"][0] as Map<String, dynamic>;
-
-    String urlBase = imageData['urlbase'];
-    String imageTitle = imageData["title"];
-    String imageCopyright = imageData["copyright"];
-    String imageCopyrightlink = imageData["copyrightlink"];
-
-    return WallpaperInfo(
-      urlBase: urlBase,
-      title: imageTitle,
-      copyright: imageCopyright,
-      copyrightLink: imageCopyrightlink,
-      day: DateTime.now(),
-    );
+    return (await _getWallpapersFromBing(local: local, n: 1)).first;
   }
 
   /// Sets the devices wallpaper from an [url]
@@ -156,15 +171,25 @@ class WallpaperService {
 
     // Because setting wallpaper for both screens doesn't work for some reason (tested on Huawei Mate 10 Pro)
     if (screen == WallpaperManagerFlutter.BOTH_SCREENS) {
-      WallpaperManagerFlutter().setwallpaperfromFile(
-          file, WallpaperManagerFlutter.HOME_SCREEN);
-      WallpaperManagerFlutter().setwallpaperfromFile(
-          file, WallpaperManagerFlutter.LOCK_SCREEN);
+      WallpaperManagerFlutter()
+          .setwallpaperfromFile(file, WallpaperManagerFlutter.HOME_SCREEN);
+      WallpaperManagerFlutter()
+          .setwallpaperfromFile(file, WallpaperManagerFlutter.LOCK_SCREEN);
     } else {
       WallpaperManagerFlutter().setwallpaperfromFile(file, screen);
     }
 
     ConfigService.currentWallpaperId = wallpaper.id;
+    ConfigService.currentWallpaperDay = Util.formatDay(wallpaper.day);
+
+    var newest = ConfigService.newestWallpaperDay;
+    var newestDate = DateTime.tryParse(newest) ?? DateTime(1800);
+    newestDate = Util.normalizeDate(newestDate);
+    var current = Util.normalizeDate(wallpaper.day);
+
+    if (current.millisecondsSinceEpoch > newestDate.millisecondsSinceEpoch) {
+      ConfigService.newestWallpaperDay = Util.formatDay(current);
+    }
 
     // await WallpaperManager.setWallpaperFromFile(file, screen);
   }
@@ -180,7 +205,7 @@ class WallpaperService {
     await Workmanager().registerPeriodicTask(
       consts.BG_WALLPAPER_TASK_ID,
       consts.BG_WALLPAPER_TASK_ID,
-      constraints: Constraints(networkType: NetworkType.connected),
+      // constraints: Constraints(networkType: NetworkType.connected),
       frequency: const Duration(hours: consts.BG_TASK_RECURRING_TIME),
       backoffPolicy: BackoffPolicy.linear,
       tag: consts.BG_WALLPAPER_TASK_ID,
@@ -200,6 +225,35 @@ class WallpaperService {
     if (enabled) {
       // await _stopBackgroundTask();
       await _startBackgroundTask();
+    }
+  }
+
+  /// Checks if todays wallpaper is downloaded and if so returns its wallpaper info (with about blank)
+  static Future<WallpaperInfo?> getTodaysWallpaperOffline() async {
+    var now = DateTime.now();
+    var file = await _getWallpaperFile(now);
+    if (await file.exists()) {
+      return WallpaperInfo(
+          urlBase: "", title: "", copyright: "", copyrightLink: "", day: now);
+    }
+  }
+
+  static Future<void> setWallpaperOfDay(DateTime day) async {
+    day = Util.normalizeDate(day);
+    var now = Util.normalizeDate(DateTime.now());
+
+    var pastDays = now.difference(day).inDays + 1;
+
+    _logger.d("pastDays: $pastDays");
+
+    List<WallpaperInfo> wallpapers = await _getWallpapersFromBing(n: pastDays);
+
+    try {
+      _logger.d(wallpapers.map((w)=>Util.formatDay(w.day)).join(", "));
+      WallpaperInfo? wallpaper = wallpapers.firstWhere((w) => w.day == day);
+      await setWallpaper(wallpaper, ConfigService.wallpaperScreen);
+    } catch (e) {
+      _logger.e(e.toString());
     }
   }
 }

@@ -110,4 +110,14 @@ class Util{
     final DateFormat formatter = DateFormat('dd.MM.yyyy hh:mm:ss');
     return formatter.format(date);
   }
+
+  static String formatDay(DateTime day){
+    final DateFormat formatter = DateFormat('yyyy-MM-dd');
+    return formatter.format(day);
+  }
+
+  static DateTime normalizeDate(DateTime day){
+    var string = formatDay(day);
+    return DateTime.parse(string);
+  }
 }

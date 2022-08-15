@@ -75,12 +75,15 @@ class AboutView extends StatelessWidget {
               await Util.openLogFile();
             },
           ),
-          _buildItem(
-            title: const Text("Background Task Last Run"),
-            subtitle: Text(
-              Util.tsToFormattedTime(ConfigService.bgWallpaperTaskLastRun),
+          Visibility(
+            visible: ConfigService.dailyModeEnabled,
+            child: _buildItem(
+              title: const Text("Background Task Last Run"),
+              subtitle: Text(
+                Util.tsToFormattedTime(ConfigService.bgWallpaperTaskLastRun),
+              ),
             ),
-          ),
+          )
         ],
       ),
     );
