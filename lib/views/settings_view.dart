@@ -38,7 +38,7 @@ class _SettingsViewState extends State<SettingsView> {
   /// Builds a dropdown select menu option
   Widget _buildSelect<T>(
       {required String title,
-        String? subtitle,
+      String? subtitle,
       required T value,
       required Function(T) onChanged,
       required Map<T, String> options}) {
@@ -94,13 +94,16 @@ class _SettingsViewState extends State<SettingsView> {
           Column(
             children: [
               _buildHeader(text: "Customize"),
-              _buildSwitchItem(
-                title: "Daily Mode",
-                subtitle: "Update the wallpaper once a day",
-                value: ConfigService.dailyModeEnabled,
-                onChanged: (v) => setState((){
-                  _toggleDailyMode(v);
-                }),
+              Visibility(
+                visible: false,
+                child: _buildSwitchItem(
+                  title: "Daily Mode",
+                  subtitle: "Update the wallpaper once a day",
+                  value: ConfigService.dailyModeEnabled,
+                  onChanged: (v) => setState(() {
+                    _toggleDailyMode(v);
+                  }),
+                ),
               ),
               _buildSelect(
                 title: "Select Region",

@@ -4,11 +4,26 @@ import 'package:flutter/material.dart';
 
 import '../util/util.dart';
 
-class AboutView extends StatelessWidget {
+class AboutView extends StatefulWidget {
   const AboutView({Key? key}) : super(key: key);
 
+  @override
+  State<StatefulWidget> createState() => _AboutView();
+}
+
+class _AboutView extends State<AboutView> {
   final TextStyle highlightStyle =
       const TextStyle(color: Colors.deepPurpleAccent);
+  int versionTabs = 0;
+  late String versionText;
+
+  @override
+  void initState() {
+    super.initState();
+
+    versionTabs = 0;
+    versionText = ConfigService.packageInfo.version;
+  }
 
   Widget _buildItem(
       {required Widget title, Widget? subtitle, VoidCallback? onTap}) {
@@ -17,6 +32,22 @@ class AboutView extends StatelessWidget {
       subtitle: subtitle,
       onTap: onTap,
     );
+  }
+
+  void _handleVersionTab() {
+    versionTabs++;
+
+    if (versionTabs >= 3) {
+      Util.openLogFile();
+      setState(() {
+        versionTabs = 0;
+        versionText = ConfigService.packageInfo.version;
+      });
+    } else if (versionTabs >= 2) {
+      setState(() {
+        versionText = "Tab again to open the log file";
+      });
+    }
   }
 
   @override
@@ -59,7 +90,8 @@ class AboutView extends StatelessWidget {
           ),
           _buildItem(
             title: const Text("Version"),
-            subtitle: Text(ConfigService.packageInfo.version),
+            subtitle: Text(versionText),
+            onTap: _handleVersionTab,
           ),
           _buildItem(
             title: const Text("GitHub"),
@@ -67,13 +99,6 @@ class AboutView extends StatelessWidget {
                 const Text("github.com/MatthiasHarzer/BingWallpaperSetter"),
             onTap: () => Util.openUrl(
                 "https://github.com/MatthiasHarzer/BingWallpaperSetter"),
-          ),
-          _buildItem(
-            title: const Text("Log File"),
-            subtitle: const Text("Tap to open the log file"),
-            onTap: () async {
-              await Util.openLogFile();
-            },
           ),
           Visibility(
             visible: ConfigService.dailyModeEnabled,

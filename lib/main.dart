@@ -16,37 +16,7 @@ import 'package:workmanager/workmanager.dart';
 import 'consts.dart' as consts;
 import 'drawer.dart';
 
-Future<void> updateWallpaper() async {
-  var logger = getLogger();
 
-  WallpaperInfo? todaysWallpaper =
-      await WallpaperService.getTodaysWallpaperOffline();
-  var connectivity = await Connectivity().checkConnectivity();
-
-  if (![
-    ConnectivityResult.mobile,
-    ConnectivityResult.wifi,
-    ConnectivityResult.ethernet
-  ].contains(connectivity)) {
-    if (todaysWallpaper != null) {
-      await WallpaperService.setWallpaper(
-          todaysWallpaper, ConfigService.wallpaperScreen);
-      logger.d("Set wallpaper from download cache");
-    } else {
-      logger.d("No internet connection. Skipping...");
-    }
-    return;
-  }
-
-  WallpaperInfo wallpaper =
-      await WallpaperService.getWallpaper(local: ConfigService.region);
-
-  await WallpaperService.ensureDownloaded(wallpaper);
-
-  await WallpaperService.setWallpaper(wallpaper, ConfigService.wallpaperScreen);
-
-  logger.d("Wallpaper updated!");
-}
 
 /// The callback dispatcher for the workmanager background isolate
 void workManagerCallbackDispatcher() {
@@ -60,7 +30,7 @@ void workManagerCallbackDispatcher() {
         case consts.BG_WALLPAPER_TASK_ID:
           if (!ConfigService.dailyModeEnabled) break;
 
-          await updateWallpaper();
+          await WallpaperService.tryUpdateWallpaper();
 
           ConfigService.bgWallpaperTaskLastRun =
               DateTime.now().millisecondsSinceEpoch;
@@ -73,33 +43,14 @@ void workManagerCallbackDispatcher() {
   });
 }
 
+/// The callback, when the widget was clicked
 Future<void> widgetBackgroundCallback(Uri? uri) async {
   await ConfigService.ensureInitialized();
 
   var logger = getLogger();
   logger.d("Running background intent from widget");
   if (uri?.host == "updatewallpaper") {
-    var now = Util.normalizeDate(DateTime.now());
-    String nowString = Util.formatDay(now);
-    String currentWallpaperDayString = ConfigService.currentWallpaperDay;
-    String newestWallpaperDayString = ConfigService.newestWallpaperDay;
-    var currentWallpaperDay =
-        DateTime.tryParse(currentWallpaperDayString) ?? DateTime(1800);
-    var newestWallpaperDay =
-        DateTime.tryParse(newestWallpaperDayString) ?? DateTime(1800);
-
-    if (now.millisecondsSinceEpoch >
-        newestWallpaperDay.millisecondsSinceEpoch) {
-      // The newest wallpaper was never applied yet -> update
-      logger.d("Updating to newest wallpaper");
-      await updateWallpaper();
-    } else {
-      var theDayBeforeCurrent =
-          currentWallpaperDay.subtract(const Duration(days: 1));
-      await WallpaperService.setWallpaperOfDay(theDayBeforeCurrent);
-
-      logger.d("Set wallpaper for day $theDayBeforeCurrent");
-    }
+    await WallpaperService.updateWallpaperOnWidgetIntent();
   }
 }
 
@@ -249,25 +200,6 @@ class _HomePageState extends State<HomePage> {
     return update;
   }
 
-  /// Opens the info view of the current wallpaper
-  void _openWallpaperInformationDialog() {
-    Navigator.pop(context);
-    if (wallpaper == null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: const Text(
-          "Wallpaper not loaded yet! Please wait...",
-          style: TextStyle(color: Colors.white),
-        ),
-        backgroundColor: Colors.grey.shade900,
-        duration: const Duration(seconds: 3),
-      ));
-    }
-
-    showDialog(
-      context: context,
-      builder: (context) => WallpaperInfoView(wallpaper: wallpaper!),
-    );
-  }
 
 
 
@@ -303,7 +235,6 @@ class _HomePageState extends State<HomePage> {
       onUpdateWallpaper: _updateWallpaper,
       drawer: MainPageDrawer(
         header: wallpaper?.copyright ?? "A Bing Image",
-        onInformationTap: _openWallpaperInformationDialog,
         onSettingsTap: _openSettingsView,
         onAboutTap: _openAboutView,
         onOldWallpapersTab: _openOldWallpapersView,

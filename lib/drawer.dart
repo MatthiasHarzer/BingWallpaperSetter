@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart';
 
 class MainPageDrawer extends StatelessWidget {
   final String header;
-  final VoidCallback? onInformationTap;
   final VoidCallback? onSettingsTap;
   final VoidCallback? onAboutTap;
   final VoidCallback? onOldWallpapersTab;
@@ -10,7 +10,6 @@ class MainPageDrawer extends StatelessWidget {
   MainPageDrawer(
       {Key? key,
       this.header = "Bing Wallpaper",
-      this.onInformationTap,
       this.onSettingsTap,
       this.onAboutTap,
       this.onOldWallpapersTab})
@@ -57,8 +56,8 @@ class MainPageDrawer extends StatelessWidget {
               height: 280,
               child: Align(
                 alignment: Alignment.bottomCenter,
-                child: DrawerHeader(
-                  margin: const EdgeInsets.all(0.0),
+                child: Container(
+                  margin: const EdgeInsets.all(15),
                   child: Text(
                     header,
                     style: const TextStyle(
@@ -69,27 +68,22 @@ class MainPageDrawer extends StatelessWidget {
                 ),
               ),
             ),
-            _buildItem(
-                icon: Icons.info_outline,
-                text: "Image Information",
-                onTap: onInformationTap,
-            ),
+            const Divider(),
             _buildItem(
               icon: Icons.history,
-              text: "Past Wallpapers",
+              text: "Wallpaper History",
               onTap: onOldWallpapersTab,
             ),
             _buildItem(
-                icon: Icons.settings,
-                text: "Settings",
-                onTap: onSettingsTap,
+              icon: Icons.settings,
+              text: "Settings",
+              onTap: onSettingsTap,
             ),
             _buildItem(
               icon: Icons.help_outlined,
               text: "About",
               onTap: onAboutTap,
             ),
-
           ],
         ),
       ),

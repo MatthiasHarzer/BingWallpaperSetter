@@ -38,13 +38,17 @@ class _OldWallpapersViewState extends State<OldWallpapersView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: const Text("Old Wallpapers"),
+        backgroundColor: Colors.black38,
       ),
       body: SingleChildScrollView(
 
         child: Wrap(
-          children: wallpapers.map((wallpaper) {
+          children: [
+            SizedBox(height: 80, child: Container(),),
+            ...wallpapers.map((wallpaper) {
             final double width = MediaQuery.of(context).size.width;
             return GestureDetector(
               onTap: ()=>_openWallpaperDetailView(wallpaper, wallpaper.day.toString()),
@@ -52,11 +56,11 @@ class _OldWallpapersViewState extends State<OldWallpapersView> {
                 tag: "hero-image-${wallpaper.day}",
                 child: CachedNetworkImage(
                   imageUrl: wallpaper.mobileUrl,
-                  width: width / 2,
+                  width: width,
                 ),
               ),
             );
-          }).toList(),
+          }).toList()],
         ),
       ),
     );

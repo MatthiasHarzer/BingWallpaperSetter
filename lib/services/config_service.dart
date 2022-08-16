@@ -14,7 +14,6 @@ const _DAILY_MODE_ENABLED = "daily_mode_enabled";
 const _WALLPAPER_RESOLUTION = "wallpaper_resolution";
 const _REGION = "region";
 const _BG_WALLPAPER_TASK_LAST_RUN = "bg_wallpaper_task_last_run";
-const _CURRENT_WALLPAPER_ID = "current_wallpaper_id";
 const _CURRENT_WALLPAPER_DAY = "current_wallpaper_day";
 const _NEWEST_WALLPAPER_DAY = "newest_wallpaper_day";
 
@@ -47,11 +46,11 @@ class ConfigService {
     _wallpaperScreen =
         _prefs.getInt(_WALLPAPER_SCREEN) ?? availableScreens.keys.first;
     _dailyModeEnabled = _prefs.getBool(_DAILY_MODE_ENABLED) ?? false;
+    _dailyModeEnabled = false; // For now
     _wallpaperResolution =
         _prefs.getString(_WALLPAPER_RESOLUTION) ?? availableResolutions.first;
     _region = _prefs.getString(_REGION) ?? availableRegions.keys.first;
     _bgWallpaperTaskLastRun = _prefs.getInt(_BG_WALLPAPER_TASK_LAST_RUN) ?? 0;
-    _currentWallpaperId = _prefs.getString(_CURRENT_WALLPAPER_ID) ?? "";
     _currentWallpaperDay = _prefs.getString(_CURRENT_WALLPAPER_DAY) ?? "";
     _newestWallpaperDay = _prefs.getString(_NEWEST_WALLPAPER_DAY) ?? "";
 
@@ -137,13 +136,6 @@ class ConfigService {
     _region = r;
   }
 
-  /// The id of the last applied wallpaper
-  static String get currentWallpaperId => _currentWallpaperId;
-
-  static set currentWallpaperId(String id) {
-    _prefs.setString(_CURRENT_WALLPAPER_ID, id);
-    _currentWallpaperId = id;
-  }
 
   /// The day of the last applied wallpaper
   static String get currentWallpaperDay => _currentWallpaperDay;
