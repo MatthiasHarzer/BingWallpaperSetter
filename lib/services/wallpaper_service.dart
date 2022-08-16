@@ -1,11 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:bing_wallpaper_setter/consts.dart';
 import 'package:bing_wallpaper_setter/extensions/file.dart';
 import 'package:bing_wallpaper_setter/services/config_service.dart';
 import 'package:devicelocale/devicelocale.dart';
 import 'package:http/http.dart';
+import 'package:intl/intl.dart';
 import 'package:wallpaper_manager_flutter/wallpaper_manager_flutter.dart';
 import 'package:workmanager/workmanager.dart';
 
@@ -78,7 +80,7 @@ class WallpaperInfo {
 }
 
 class WallpaperService {
-  static const _maxWallpapers = 10;
+  static const _maxWallpapers = 50;
   static final _logger = getLogger();
 
   /// Deletes old wallpapers
@@ -124,43 +126,68 @@ class WallpaperService {
   }
 
   /// Gets a list of wallpapers from bing where [n] is the number of wp to fetch
-  static Future<List<WallpaperInfo>> _getWallpapersFromBing(
-      {String local = "auto", int n = 1}) async {
-    if (local == "auto") {
-      local = (await Devicelocale.currentLocale).toString();
-    }
-    String url = "$BASE_URL$local&n=$n";
+  static Future<List<WallpaperInfo>> getWallpapersFromBing(
+      {String? local, int n = 1, DateTime? startDate}) async {
+    startDate ??= DateTime.now();
+    startDate = Util.normalizeDate(startDate);
+    local ??= ConfigService.region;
     var now = Util.normalizeDate(DateTime.now());
-
-    _logger.d("Requesting $url");
-
-    Response response =
-        await get(Uri.parse(url), headers: {"Accept": "application/json"});
-
-    var resJson = json.decode(response.body) as Map<String, dynamic>;
-    List rawImages = resJson["images"] as List;
     List<WallpaperInfo> images = [];
 
-    for (var data in rawImages) {
-      images.add(WallpaperInfo(
-          urlBase: data["urlbase"],
-          title: data["title"],
-          copyright: data["copyright"],
-          copyrightLink: data["copyrightlink"],
-          day: now));
-      now = now.subtract(const Duration(days: 1));
+    var idx = startDate.difference(now).inDays;
+
+    List<DateTime> usedDays = [];
+
+    while(n > 0){
+      String url = "$BASE_URL$local&n=${min(8, n)}&idx=$idx";
+
+      _logger.d("Requesting $url");
+
+      Response response =
+          await get(Uri.parse(url), headers: {"Accept": "application/json"});
+
+      var resJson = json.decode(response.body) as Map<String, dynamic>;
+      List rawImages = resJson["images"] as List;
+
+      DateTime? lastDay;
+      bool breakLoop = false;
+
+
+      for (var data in rawImages) {
+        lastDay = DateTime.parse(data["enddate"]);
+
+        if(usedDays.contains(lastDay)) {
+          breakLoop = true;
+          break;
+        }
+
+        images.add(WallpaperInfo(
+            urlBase: data["urlbase"],
+            title: data["title"],
+            copyright: data["copyright"],
+            copyrightLink: data["copyrightlink"],
+            day: lastDay));
+        usedDays.add(lastDay);
+      }
+
+      if(breakLoop){
+        // This means we're getting repeated results, so stop fetching more
+        break;
+      }
+
+
+      n -= 8;
+      idx += 9;
     }
 
     return images;
   }
 
   /// Gets the current wallpaper info
-  static Future<WallpaperInfo> getWallpaper({String local = "auto"}) async {
-    if (local == "auto") {
-      local = (await Devicelocale.currentLocale).toString();
-    }
+  static Future<WallpaperInfo> getWallpaper({String? local}) async {
+    local ??= ConfigService.region;
 
-    return (await _getWallpapersFromBing(local: local, n: 1)).first;
+    return (await getWallpapersFromBing(local: local, n: 1)).first;
   }
 
   /// Sets the devices wallpaper from an [url]
@@ -246,7 +273,7 @@ class WallpaperService {
 
     _logger.d("pastDays: $pastDays");
 
-    List<WallpaperInfo> wallpapers = await _getWallpapersFromBing(n: pastDays);
+    List<WallpaperInfo> wallpapers = await getWallpapersFromBing(n: pastDays);
 
     try {
       _logger.d(wallpapers.map((w)=>Util.formatDay(w.day)).join(", "));

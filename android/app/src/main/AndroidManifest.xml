@@ -27,7 +27,7 @@
         </activity>
 
        <!-- Your Background receiver and service goes here -->
-       <receiver android:name="AppWidgetProvider" android:exported="true">
+       <receiver android:name="AppWidgetProvider" android:exported="true" android:label="Update Wallpaper">
            <intent-filter>
                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
            </intent-filter>

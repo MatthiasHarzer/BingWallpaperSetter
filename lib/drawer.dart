@@ -5,13 +5,15 @@ class MainPageDrawer extends StatelessWidget {
   final VoidCallback? onInformationTap;
   final VoidCallback? onSettingsTap;
   final VoidCallback? onAboutTap;
+  final VoidCallback? onOldWallpapersTab;
 
   MainPageDrawer(
       {Key? key,
       this.header = "Bing Wallpaper",
       this.onInformationTap,
       this.onSettingsTap,
-      this.onAboutTap})
+      this.onAboutTap,
+      this.onOldWallpapersTab})
       : super(key: key);
 
   final TextStyle itemTextStyle = TextStyle(
@@ -69,8 +71,13 @@ class MainPageDrawer extends StatelessWidget {
             ),
             _buildItem(
                 icon: Icons.info_outline,
-                text: "Image information",
+                text: "Image Information",
                 onTap: onInformationTap,
+            ),
+            _buildItem(
+              icon: Icons.history,
+              text: "Past Wallpapers",
+              onTap: onOldWallpapersTab,
             ),
             _buildItem(
                 icon: Icons.settings,
@@ -82,6 +89,7 @@ class MainPageDrawer extends StatelessWidget {
               text: "About",
               onTap: onAboutTap,
             ),
+
           ],
         ),
       ),

@@ -2,6 +2,7 @@ import 'package:bing_wallpaper_setter/services/config_service.dart';
 import 'package:bing_wallpaper_setter/services/wallpaper_service.dart';
 import 'package:bing_wallpaper_setter/util/util.dart';
 import 'package:bing_wallpaper_setter/views/about_view.dart';
+import 'package:bing_wallpaper_setter/views/old_wallpapers_view.dart';
 import 'package:bing_wallpaper_setter/views/settings_view.dart';
 import 'package:bing_wallpaper_setter/views/wallpaper_info_view.dart';
 import 'package:bing_wallpaper_setter/views/wallpaper_view.dart';
@@ -15,23 +16,30 @@ import 'package:workmanager/workmanager.dart';
 import 'consts.dart' as consts;
 import 'drawer.dart';
 
-Future<void> updateWallpaper() async{
+Future<void> updateWallpaper() async {
   var logger = getLogger();
 
-  WallpaperInfo? todaysWallpaper = await WallpaperService.getTodaysWallpaperOffline();
+  WallpaperInfo? todaysWallpaper =
+      await WallpaperService.getTodaysWallpaperOffline();
   var connectivity = await Connectivity().checkConnectivity();
 
-  if(![ConnectivityResult.mobile, ConnectivityResult.wifi, ConnectivityResult.ethernet].contains(connectivity)){
-    if(todaysWallpaper != null){
-      await WallpaperService.setWallpaper(todaysWallpaper, ConfigService.wallpaperScreen);
+  if (![
+    ConnectivityResult.mobile,
+    ConnectivityResult.wifi,
+    ConnectivityResult.ethernet
+  ].contains(connectivity)) {
+    if (todaysWallpaper != null) {
+      await WallpaperService.setWallpaper(
+          todaysWallpaper, ConfigService.wallpaperScreen);
       logger.d("Set wallpaper from download cache");
-    }else{
+    } else {
       logger.d("No internet connection. Skipping...");
     }
     return;
   }
 
-  WallpaperInfo wallpaper = await WallpaperService.getWallpaper(local: ConfigService.region);
+  WallpaperInfo wallpaper =
+      await WallpaperService.getWallpaper(local: ConfigService.region);
 
   await WallpaperService.ensureDownloaded(wallpaper);
 
@@ -50,14 +58,12 @@ void workManagerCallbackDispatcher() {
 
       switch (task) {
         case consts.BG_WALLPAPER_TASK_ID:
-          if(!ConfigService.dailyModeEnabled) break;
+          if (!ConfigService.dailyModeEnabled) break;
 
           await updateWallpaper();
 
           ConfigService.bgWallpaperTaskLastRun =
               DateTime.now().millisecondsSinceEpoch;
-
-
       }
     } catch (error) {
       logger.e(error.toString());
@@ -67,31 +73,33 @@ void workManagerCallbackDispatcher() {
   });
 }
 
-Future<void> widgetBackgroundCallback(Uri? uri)async{
+Future<void> widgetBackgroundCallback(Uri? uri) async {
   await ConfigService.ensureInitialized();
 
   var logger = getLogger();
   logger.d("Running background intent from widget");
-  if(uri?.host == "updatewallpaper"){
+  if (uri?.host == "updatewallpaper") {
     var now = Util.normalizeDate(DateTime.now());
     String nowString = Util.formatDay(now);
     String currentWallpaperDayString = ConfigService.currentWallpaperDay;
     String newestWallpaperDayString = ConfigService.newestWallpaperDay;
-    var currentWallpaperDay = DateTime.tryParse(currentWallpaperDayString) ?? DateTime(1800);
-    var newestWallpaperDay = DateTime.tryParse(newestWallpaperDayString) ?? DateTime(1800);
+    var currentWallpaperDay =
+        DateTime.tryParse(currentWallpaperDayString) ?? DateTime(1800);
+    var newestWallpaperDay =
+        DateTime.tryParse(newestWallpaperDayString) ?? DateTime(1800);
 
-
-    if(now.millisecondsSinceEpoch > newestWallpaperDay.millisecondsSinceEpoch){
+    if (now.millisecondsSinceEpoch >
+        newestWallpaperDay.millisecondsSinceEpoch) {
       // The newest wallpaper was never applied yet -> update
       logger.d("Updating to newest wallpaper");
       await updateWallpaper();
-    }else{
-      var theDayBeforeCurrent = currentWallpaperDay.subtract(const Duration(days: 1));
+    } else {
+      var theDayBeforeCurrent =
+          currentWallpaperDay.subtract(const Duration(days: 1));
       await WallpaperService.setWallpaperOfDay(theDayBeforeCurrent);
 
       logger.d("Set wallpaper for day $theDayBeforeCurrent");
     }
-
   }
 }
 
@@ -104,6 +112,8 @@ void main() async {
   await Workmanager()
       .initialize(workManagerCallbackDispatcher, isInDebugMode: true);
   await WallpaperService.checkAndSetBackgroundTaskState();
+
+
 
   HomeWidget.registerBackgroundCallback(widgetBackgroundCallback);
 
@@ -222,16 +232,17 @@ class _HomePageState extends State<HomePage> {
 
   /// Checks for wallpaper updates and sets the wallpaper variable. Returns true if updated or false if now update is present
   Future<bool> _updateWallpaper() async {
-    WallpaperInfo newWallpaper = await WallpaperService.getWallpaper(local: ConfigService.region);
+    WallpaperInfo newWallpaper =
+        await WallpaperService.getWallpaper(local: ConfigService.region);
     await WallpaperService.ensureDownloaded(newWallpaper);
 
     bool update = newWallpaper.mobileUrl != wallpaper?.mobileUrl;
 
-    setState((){
+    setState(() {
       wallpaper = newWallpaper;
     });
 
-    if(update){
+    if (update) {
       logger.d("Updated wallpaper: $wallpaper");
     }
 
@@ -258,32 +269,14 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Route _createSettingsViewRoute() {
-    return PageRouteBuilder(
-      pageBuilder: (context, animation, secondaryAnimation) =>
-          const SettingsView(),
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        const begin = Offset(1.0, 0.0);
-        const end = Offset.zero;
-        const curve = Curves.ease;
 
-        var tween =
-            Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-
-        return SlideTransition(
-          position: animation.drive(tween),
-          child: child,
-        );
-      },
-    );
-  }
 
   /// Opens the settings window
   void _openSettingsView() {
     Navigator.pop(context);
     Navigator.push(
       context,
-      _createSettingsViewRoute(),
+      Util.createScaffoldRoute(view: const SettingsView()),
     );
   }
 
@@ -292,6 +285,14 @@ class _HomePageState extends State<HomePage> {
     showDialog(
       context: context,
       builder: (context) => const AboutView(),
+    );
+  }
+
+  void _openOldWallpapersView() {
+    Navigator.pop(context);
+    Navigator.push(
+      context,
+      Util.createScaffoldRoute(view: const OldWallpapersView()),
     );
   }
 
@@ -305,6 +306,7 @@ class _HomePageState extends State<HomePage> {
         onInformationTap: _openWallpaperInformationDialog,
         onSettingsTap: _openSettingsView,
         onAboutTap: _openAboutView,
+        onOldWallpapersTab: _openOldWallpapersView,
       ),
     );
   }

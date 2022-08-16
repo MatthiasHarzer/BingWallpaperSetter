@@ -16,12 +16,15 @@ class WallpaperView extends StatefulWidget {
   final WallpaperInfo? wallpaper;
   final Widget? drawer;
   final AsyncBoolCallback? onUpdateWallpaper;
+  final String? heroTag;
 
   const WallpaperView(
       {Key? key,
       required this.wallpaper,
-      required this.drawer,
-      this.onUpdateWallpaper})
+      this.drawer,
+      this.onUpdateWallpaper,
+      this.heroTag,
+      })
       : super(key: key);
 
   @override
@@ -133,8 +136,11 @@ class _WallpaperViewState extends State<WallpaperView> {
 
   /// Builds a spinner, indicating that the wallpaper is loading
   Widget _buildSpinner() {
-    return const Center(
-      child: CircularProgressIndicator(),
+    return SizedBox(
+      height: MediaQuery.of(context).size.height,
+      child: const Center(
+        child: CircularProgressIndicator(),
+      ),
     );
   }
 
@@ -142,7 +148,7 @@ class _WallpaperViewState extends State<WallpaperView> {
   Widget _buildWallpaper() {
     final size = MediaQuery.of(context).size;
 
-    return CachedNetworkImage(
+    Widget child = CachedNetworkImage(
       imageUrl: widget.wallpaper!.mobileUrl,
       width: size.width,
       height: size.height,
@@ -151,6 +157,13 @@ class _WallpaperViewState extends State<WallpaperView> {
         child: CircularProgressIndicator(value: downloadProgress.progress),
       ),
     );
+    if(widget.heroTag != null){
+      child = Hero(
+        tag: widget.heroTag!,
+        child: child,
+      );
+    }
+    return child;
   }
 
   @override
