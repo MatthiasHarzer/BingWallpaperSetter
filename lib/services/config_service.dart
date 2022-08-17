@@ -97,7 +97,7 @@ class ConfigService {
     "en-us": "USA",
     "en-gb": "UK",
     "de-de": "Germany",
-    "fr-de": "France",
+    "fr-fr": "France",
     "it-it": "Italy",
     "ja-jp": "Japan",
     "es-es": "Spain",

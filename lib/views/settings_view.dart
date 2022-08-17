@@ -39,7 +39,7 @@ class _SettingsViewState extends State<SettingsView> {
   Widget _buildSelect<T>(
       {required String title,
       String? subtitle,
-      required T value,
+      required T? value,
       required Function(T) onChanged,
       required Map<T, String> options}) {
     List<DropdownMenuItem<T>> dropDownItems = options
@@ -52,6 +52,9 @@ class _SettingsViewState extends State<SettingsView> {
         .values
         .toList();
     final GlobalKey dropDownKey = GlobalKey();
+    if(!options.keys.contains(value)){
+      value = null;
+    }
     return ListTile(
       title: Text(title),
       subtitle: subtitle != null ? Text(subtitle) : null,

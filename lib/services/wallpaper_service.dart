@@ -156,6 +156,7 @@ class WallpaperService {
   static Future<Iterable<WallpaperInfo>> _getWallpapersFromBing(
       {required String local, required int n, int idx = 0}) async {
     String url = "$BASE_URL&mkt=$local&n=$n&idx=$idx";
+    _logger.d("Requesting $url");
     late Response response;
     try {
       response =
@@ -312,17 +313,6 @@ class WallpaperService {
       await _startBackgroundTask();
     }
   }
-
-  // /// Checks if todays wallpaper is downloaded and if so returns its wallpaper info (with about blank)
-  // static Future<WallpaperInfo?> getTodaysWallpaperOffline() async {
-  //   var now = DateTime.now();
-  //   var file = await _getWallpaperFile(now);
-  //   if (await file.exists()) {
-  //     return WallpaperInfo(
-  //         urlBase: "", title: "", copyright: "", copyrightLink: "", day: now);
-  //   }
-  //   return null;
-  // }
 
   /// Returns a list of WallpaperInfo's with the downloaded (on-device) wallpapers
   static Future<List<WallpaperInfo>> _getOfflineWallpapers() async {

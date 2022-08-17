@@ -44,7 +44,7 @@ void workManagerCallbackDispatcher() {
 /// The callback, when the widget was clicked
 Future<void> widgetBackgroundCallback(Uri? uri) async {
   await ConfigService.ensureInitialized();
-  
+
   if (uri?.host == "updatewallpaper") {
     await WallpaperService.updateWallpaperOnWidgetIntent();
   }
