@@ -27,7 +27,6 @@ class ConfigService {
   static late String _region;
   static late PackageInfo _packageInfo;
   static late int _bgWallpaperTaskLastRun;
-  static late String _currentWallpaperId;
   static late String _currentWallpaperDay;
   static late String _newestWallpaperDay;
 
@@ -131,7 +130,7 @@ class ConfigService {
   /// The regions wallpaper locale
   static String get region => _region;
 
-  static set region(String r) {
+  static set region(String r){
     _prefs.setString(_REGION, r);
     _region = r;
   }

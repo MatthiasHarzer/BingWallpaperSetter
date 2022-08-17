@@ -4,9 +4,7 @@ import 'package:bing_wallpaper_setter/util/util.dart';
 import 'package:bing_wallpaper_setter/views/about_view.dart';
 import 'package:bing_wallpaper_setter/views/old_wallpapers_view.dart';
 import 'package:bing_wallpaper_setter/views/settings_view.dart';
-import 'package:bing_wallpaper_setter/views/wallpaper_info_view.dart';
 import 'package:bing_wallpaper_setter/views/wallpaper_view.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:optimize_battery/optimize_battery.dart';
@@ -46,9 +44,7 @@ void workManagerCallbackDispatcher() {
 /// The callback, when the widget was clicked
 Future<void> widgetBackgroundCallback(Uri? uri) async {
   await ConfigService.ensureInitialized();
-
-  var logger = getLogger();
-  logger.d("Running background intent from widget");
+  
   if (uri?.host == "updatewallpaper") {
     await WallpaperService.updateWallpaperOnWidgetIntent();
   }
@@ -63,8 +59,6 @@ void main() async {
   await Workmanager()
       .initialize(workManagerCallbackDispatcher, isInDebugMode: true);
   await WallpaperService.checkAndSetBackgroundTaskState();
-
-
 
   HomeWidget.registerBackgroundCallback(widgetBackgroundCallback);
 

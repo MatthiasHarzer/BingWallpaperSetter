@@ -111,8 +111,8 @@ class Util{
     return formatter.format(date);
   }
 
-  static String formatDay(DateTime day){
-    final DateFormat formatter = DateFormat('yyyy-MM-dd');
+  static String formatDay(DateTime day, {String format="yyyy-MM-dd"}){
+    final DateFormat formatter = DateFormat(format);
     return formatter.format(day);
   }
 

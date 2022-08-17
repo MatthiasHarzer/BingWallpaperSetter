@@ -3,7 +3,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../services/wallpaper_service.dart';
-import '../util/util.dart';
 
 class OldWallpapersView extends StatefulWidget {
   const OldWallpapersView({Key? key}) : super(key: key);
@@ -23,7 +22,7 @@ class _OldWallpapersViewState extends State<OldWallpapersView> {
   }
 
   Future<void> _loadWallpapers() async {
-    wallpapers = await WallpaperService.getWallpapersFromBing(n: 50);
+    wallpapers = await WallpaperService.getWallpaperHistory();
     setState(() {});
   }
 

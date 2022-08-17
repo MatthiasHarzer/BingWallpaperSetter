@@ -5,18 +5,26 @@ import 'dart:math';
 import 'package:bing_wallpaper_setter/consts.dart';
 import 'package:bing_wallpaper_setter/extensions/file.dart';
 import 'package:bing_wallpaper_setter/services/config_service.dart';
+import 'package:collection/collection.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:http/http.dart';
 import 'package:wallpaper_manager_flutter/wallpaper_manager_flutter.dart';
 import 'package:workmanager/workmanager.dart';
-import 'package:collection/collection.dart';
 
 import '../consts.dart' as consts;
 import '../util/util.dart';
 
-// DateTime _dayFromString(String day){
-//
-// }
+/// An exception when the given day is too far in the past and can't be fetched by the bing api.
+class WallpaperOutOfDateException implements Exception {
+  late DateTime day;
+
+  WallpaperOutOfDateException(this.day);
+
+  @override
+  String toString() {
+    return "${Util.formatDay(day)} is too far in the past and can't be fetched.";
+  }
+}
 
 String _toFormattedWallpaperName(DateTime day) {
   return "wallpaper_${Util.formatDay(day)}.jpg";
@@ -125,65 +133,124 @@ class WallpaperService {
         filename: _toFormattedWallpaperName(wallpaperInfo.day));
   }
 
-  /// Gets a list of wallpapers from bing where [n] is the number of wp to fetch
-  static Future<List<WallpaperInfo>> getWallpapersFromBing(
-      {String? local, int n = 1, DateTime? startDate}) async {
-    startDate ??= DateTime.now();
-    startDate = Util.normalizeDate(startDate);
+  /// Gets a wallpaper for the given [day]. Returns [null] if the wallpaper couldn't be fetched.
+  /// Throws a [WallpaperOutOfDateException] when the day is too far in the past.
+  static Future<WallpaperInfo?> getWallpaperFromBingByDay(DateTime day,
+      {String? local}) async {
     local ??= ConfigService.region;
+    day = Util.normalizeDate(day);
     var now = Util.normalizeDate(DateTime.now());
-    List<WallpaperInfo> images = [];
 
-    var idx = startDate.difference(now).inDays;
+    int diff = now.difference(day).inDays.abs();
 
-    List<DateTime> usedDays = [];
+    _logger.d("Difference $diff");
 
-    while (n > 0) {
-      String url = "$BASE_URL$local&n=${min(8, n)}&idx=$idx";
+    if ((diff + 1) >= WALLPAPER_HISTORY_LIMIT) {
+      throw WallpaperOutOfDateException(day);
+    }
+    return (await _getWallpapersFromBing(local: local, n: 8, idx: min(8, diff)))
+        .firstWhereOrNull((w) => w.day == day);
+  }
 
-      _logger.d("Requesting $url");
-
-      Response response =
+  /// Makes a signle request to the bing endpoint an returns the fetched wallpapers.
+  static Future<Iterable<WallpaperInfo>> _getWallpapersFromBing(
+      {required String local, required int n, int idx = 0}) async {
+    String url = "$BASE_URL&mkt=$local&n=$n&idx=$idx";
+    late Response response;
+    try {
+      response =
           await get(Uri.parse(url), headers: {"Accept": "application/json"});
-
-      var resJson = json.decode(response.body) as Map<String, dynamic>;
-      List rawImages = resJson["images"] as List;
-
-      DateTime? lastDay;
-
-      int newWallpapers = 0;
-      for (var data in rawImages) {
-        lastDay = DateTime.parse(data["enddate"]);
-
-        if (usedDays.contains(lastDay)) {
-          continue;
-        }
-
-        images.add(WallpaperInfo(
-            urlBase: data["urlbase"],
-            title: data["title"],
-            copyright: data["copyright"],
-            copyrightLink: data["copyrightlink"],
-            day: lastDay));
-        usedDays.add(lastDay);
-        newWallpapers++;
-      }
-
-      if (newWallpapers <= 0) {
-        // This means we're getting repeated results, so stop fetching more
-        break;
-      }
-
-      n -= 8;
-      idx += 9;
+    } catch (e) {
+      _logger.e(e.toString());
+      return List.empty();
     }
 
-    return images;
+    var resJson = json.decode(response.body) as Map<String, dynamic>;
+    List rawImages = resJson["images"] as List;
+
+    return rawImages.map((data) => WallpaperInfo(
+        urlBase: data["urlbase"],
+        title: data["title"],
+        copyright: data["copyright"],
+        copyrightLink: data["copyrightlink"],
+        day: DateTime.parse(data["enddate"])));
   }
+
+  /// Returns as much wallpapers as possible
+  static Future<List<WallpaperInfo>> getWallpaperHistory() async {
+    List<WallpaperInfo> wallpapers = [];
+
+    const int step = 8;
+
+    for (int idx = 0; idx < WALLPAPER_HISTORY_LIMIT; idx += step) {
+      var walls = await _getWallpapersFromBing(
+          local: ConfigService.region, n: step, idx: idx);
+      wallpapers.addAll(walls);
+    }
+
+    return wallpapers.toSet().toList(); // Remove duplicates
+  }
+
+  // /// Gets a list of wallpapers from bing where [n] is the number of wp to fetch
+  // static Future<List<WallpaperInfo>> getWallpapersFromBing(
+  //     {String? local, int n = 1, DateTime? startDate}) async {
+  //   startDate ??= DateTime.now();
+  //   startDate = Util.normalizeDate(startDate);
+  //   local ??= ConfigService.region;
+  //   var now = Util.normalizeDate(DateTime.now());
+  //   List<WallpaperInfo> images = [];
+  //
+  //   var idx = startDate.difference(now).inDays;
+  //
+  //   List<DateTime> usedDays = [];
+  //
+  //   while (n > 0) {
+  //     String url = "$BASE_URL&mkt=$local&n=${min(8, n)}&idx=$idx";
+  //
+  //     _logger.d("Requesting $url");
+  //
+  //     Response response =
+  //         await get(Uri.parse(url), headers: {"Accept": "application/json"});
+  //
+  //     var resJson = json.decode(response.body) as Map<String, dynamic>;
+  //     List rawImages = resJson["images"] as List;
+  //
+  //     DateTime? lastDay;
+  //
+  //     int newWallpapers = 0;
+  //     for (var data in rawImages) {
+  //       lastDay = DateTime.parse(data["enddate"]);
+  //
+  //       if (usedDays.contains(lastDay)) {
+  //         continue;
+  //       }
+  //
+  //       images.add(WallpaperInfo(
+  //           urlBase: data["urlbase"],
+  //           title: data["title"],
+  //           copyright: data["copyright"],
+  //           copyrightLink: data["copyrightlink"],
+  //           day: lastDay));
+  //       usedDays.add(lastDay);
+  //       newWallpapers++;
+  //       n--;
+  //     }
+  //
+  //     if (newWallpapers <= 0) {
+  //       // This means we're getting repeated results, so stop fetching more
+  //       break;
+  //     }
+  //
+  //
+  //     idx += 8;
+  //   }
+  //
+  //   return images;
+  // }
 
   /// Gets the current wallpaper info
   static Future<WallpaperInfo> getWallpaper({String? local}) async {
-    return (await getWallpapersFromBing(local: local, n: 1)).first;
+    return (await getWallpaperFromBingByDay(DateTime.now(), local: local))!;
   }
 
   /// Sets the devices wallpaper from an [url]
@@ -246,16 +313,16 @@ class WallpaperService {
     }
   }
 
-  /// Checks if todays wallpaper is downloaded and if so returns its wallpaper info (with about blank)
-  static Future<WallpaperInfo?> getTodaysWallpaperOffline() async {
-    var now = DateTime.now();
-    var file = await _getWallpaperFile(now);
-    if (await file.exists()) {
-      return WallpaperInfo(
-          urlBase: "", title: "", copyright: "", copyrightLink: "", day: now);
-    }
-    return null;
-  }
+  // /// Checks if todays wallpaper is downloaded and if so returns its wallpaper info (with about blank)
+  // static Future<WallpaperInfo?> getTodaysWallpaperOffline() async {
+  //   var now = DateTime.now();
+  //   var file = await _getWallpaperFile(now);
+  //   if (await file.exists()) {
+  //     return WallpaperInfo(
+  //         urlBase: "", title: "", copyright: "", copyrightLink: "", day: now);
+  //   }
+  //   return null;
+  // }
 
   /// Returns a list of WallpaperInfo's with the downloaded (on-device) wallpapers
   static Future<List<WallpaperInfo>> _getOfflineWallpapers() async {
@@ -279,23 +346,23 @@ class WallpaperService {
   }
 
   /// Tries to set the wallpaper from a given day
-  static Future<void> setWallpaperOfDay(DateTime day) async {
+  static Future<void> setWallpaperOf({required DateTime day}) async {
     day = Util.normalizeDate(day);
-    var now = Util.normalizeDate(DateTime.now());
+
     List<WallpaperInfo?> offlineWallpapers = await _getOfflineWallpapers();
+    WallpaperInfo? wallpaper =
+        offlineWallpapers.firstWhereOrNull((wp) => wp?.day == day);
 
-    WallpaperInfo? wallpaper = offlineWallpapers.firstWhereOrNull((wp) => wp?.day==day);
-
-    if(wallpaper == null){
-      var pastDays = now.difference(day).inDays + 1;
-      List<WallpaperInfo?> wallpapers = await getWallpapersFromBing(n: pastDays);
-      wallpaper = wallpapers.firstWhereOrNull((w) => w?.day == day);
-    }else{
-      _logger.d("Found image for ${Util.formatDay(day)} on the device, using it.");
+    if (wallpaper == null) {
+      wallpaper = await getWallpaperFromBingByDay(day);
+    } else {
+      _logger
+          .d("Found image for ${Util.formatDay(day)} on the device, using it.");
     }
 
-    if(wallpaper == null){
-      _logger.v("Couldn't get matching wallpaper for day ${Util.formatDay(day)}");
+    if (wallpaper == null) {
+      _logger
+          .d("Couldn't get matching wallpaper for day ${Util.formatDay(day)}");
       return;
     }
     await setWallpaper(wallpaper, ConfigService.wallpaperScreen);
@@ -306,10 +373,12 @@ class WallpaperService {
     var logger = getLogger();
 
     WallpaperInfo? todaysWallpaper =
-    await WallpaperService.getTodaysWallpaperOffline();
+        (await WallpaperService._getOfflineWallpapers()).firstWhereOrNull(
+            (w) => w.day == Util.normalizeDate(DateTime.now()));
+
     var connectivity = await Connectivity().checkConnectivity();
 
-    if(todaysWallpaper == null){
+    if (todaysWallpaper == null) {
       if (![
         ConnectivityResult.mobile,
         ConnectivityResult.wifi,
@@ -321,17 +390,18 @@ class WallpaperService {
 
       todaysWallpaper = await WallpaperService.getWallpaper();
       await WallpaperService.ensureDownloaded(todaysWallpaper);
-    }else{
+    } else {
       logger.d("Using cached wallpaper today");
     }
 
-    await WallpaperService.setWallpaper(todaysWallpaper, ConfigService.wallpaperScreen);
+    await WallpaperService.setWallpaper(
+        todaysWallpaper, ConfigService.wallpaperScreen);
 
     logger.d("Wallpaper updated!");
   }
 
   /// Update the wallpaper. If todays wallpaper was never applied, it will be, else the day before current will be used
-  static Future<void> updateWallpaperOnWidgetIntent() async{
+  static Future<void> updateWallpaperOnWidgetIntent() async {
     var now = Util.normalizeDate(DateTime.now());
     var currentWallpaperDay =
         DateTime.tryParse(ConfigService.currentWallpaperDay) ?? DateTime(1800);
@@ -346,10 +416,16 @@ class WallpaperService {
     } else {
       _logger.d("Current wallpaper: ${Util.formatDay(currentWallpaperDay)}");
       var theDayBeforeCurrent =
-      currentWallpaperDay.subtract(const Duration(days: 1));
-      await setWallpaperOfDay(theDayBeforeCurrent);
+          currentWallpaperDay.subtract(const Duration(days: 1));
 
-      _logger.d("Set wallpaper for day $theDayBeforeCurrent");
+      try{
+        await setWallpaperOf(day: theDayBeforeCurrent);
+      }on WallpaperOutOfDateException catch(e){
+        _logger.e(e.toString());
+        await tryUpdateWallpaper();
+      }
+
+      _logger.d("Set wallpaper for day ${Util.formatDay(theDayBeforeCurrent)}");
     }
   }
 }

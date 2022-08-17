@@ -8,7 +8,10 @@ class WallpaperInfoView extends StatelessWidget {
   final WallpaperInfo wallpaper;
   final TextStyle buttonStyle = const TextStyle(color: Colors.deepPurpleAccent);
 
-  const WallpaperInfoView({Key? key, required this.wallpaper}) : super(key: key);
+  const WallpaperInfoView({Key? key, required this.wallpaper})
+      : super(key: key);
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -21,6 +24,8 @@ class WallpaperInfoView extends StatelessWidget {
       content: Wrap(
         children: [
           Text(wallpaper.copyright),
+          const Divider(),
+          Text(Util.formatDay(wallpaper.day, format: 'd. MMM yyyy'), style: TextStyle(color: Colors.grey[500]),),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -78,9 +83,9 @@ class WallpaperInfoView extends StatelessWidget {
             onPressed: () => Navigator.pop(context),
             child: Container(
                 child: Text(
-                  "Close",
-                  style: buttonStyle,
-                )))
+              "Close",
+              style: buttonStyle,
+            )))
       ],
     );
   }
