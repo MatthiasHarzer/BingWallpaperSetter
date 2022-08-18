@@ -345,13 +345,14 @@ class WallpaperService {
           currentWallpaperDay.subtract(const Duration(days: 1));
 
       try {
+        _logger.d("Setting wallpaper for day ${Util.formatDay(theDayBeforeCurrent)}");
         await setWallpaperOf(day: theDayBeforeCurrent);
       } on WallpaperOutOfDateException catch (e) {
-        _logger.e(e.toString());
+        _logger.d(e.toString());
         await tryUpdateWallpaper();
+      }catch(e){
+        _logger.d("An error occurred: ${e.toString()}");
       }
-
-      _logger.d("Set wallpaper for day ${Util.formatDay(theDayBeforeCurrent)}");
     }
   }
 }

@@ -119,8 +119,8 @@ class _HomePageState extends State<HomePage> {
   /// Checks for required permission
   void _checkPermission() async {
     bool storagePermissionGranted = await _requestStoragePermission();
-    bool ignoreBatteryOptimizationGranted =
-        await _requestIgnoreBatteryOptimization();
+    // bool ignoreBatteryOptimizationGranted =
+    //     await _requestIgnoreBatteryOptimization();
 
     if (!mounted) return;
 
@@ -137,18 +137,18 @@ class _HomePageState extends State<HomePage> {
       );
     }
 
-    if (!ignoreBatteryOptimizationGranted) {
-      Util.showSnackBar(
-        context,
-        seconds: 30,
-        content: const Text(
-            "Battery optimization might negatively influence the behavior of the app."),
-        action: SnackBarAction(
-          label: "OPEN SETTINGS",
-          onPressed: () => OptimizeBattery.openBatteryOptimizationSettings(),
-        ),
-      );
-    }
+    // if (!ignoreBatteryOptimizationGranted) {
+    //   Util.showSnackBar(
+    //     context,
+    //     seconds: 30,
+    //     content: const Text(
+    //         "Battery optimization might negatively influence the behavior of the app."),
+    //     action: SnackBarAction(
+    //       label: "OPEN SETTINGS",
+    //       onPressed: () => OptimizeBattery.openBatteryOptimizationSettings(),
+    //     ),
+    //   );
+    // }
   }
 
   /// Requests storage permission. Returns whether permission is granted or not
