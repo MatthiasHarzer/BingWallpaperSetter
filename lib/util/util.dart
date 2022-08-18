@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:bing_wallpaper_setter/extensions/file.dart';
 import 'package:bing_wallpaper_setter/services/config_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +8,8 @@ import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import 'package:open_file/open_file.dart';
 import 'package:url_launcher/url_launcher.dart' as web;
+
+import '../services/wallpaper_service.dart';
 
 class FileLogOutput extends LogOutput{
   @override
@@ -35,7 +38,7 @@ Logger getLogger(){
 
 class Util{
   /// Downloads a file from an [url] to a given [directory]. Returns the files path.
-  static Future<String> downloadFile(String url, Directory directory,
+  static Future<String> _downloadFile(String url, Directory directory,
       {String filename = "snapshot.png"}) async {
     // WidgetsFlutterBinding.ensureInitialized();
 
@@ -44,9 +47,17 @@ class Util{
     var response = await request.close();
     var bytes = await consolidateHttpClientResponseBytes(response);
     File file = File('${directory.path}/$filename');
+
+    print("downloaded to ${file.path}");
+
     await file.writeAsBytes(bytes);
     return file.uri.path;
 
+  }
+
+  static Future<void> downloadWallpaper(WallpaperInfo wallpaper)async{
+    File file = await wallpaper.file;
+    await _downloadFile(wallpaper.mobileUrl, await ConfigService.wallpaperCacheDir, filename: file.name);
   }
 
 

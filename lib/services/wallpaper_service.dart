@@ -26,17 +26,6 @@ class WallpaperOutOfDateException implements Exception {
   }
 }
 
-String _toFormattedWallpaperName(DateTime day) {
-  return "wallpaper_${Util.formatDay(day)}.jpg";
-}
-
-/// Returns the wallpaper save file
-Future<File> _getWallpaperFile(DateTime day) async {
-  var dir = await ConfigService.wallpaperCacheDir;
-  String name = _toFormattedWallpaperName(day);
-  return File("${dir.path}/$name");
-}
-
 class WallpaperInfo {
   final String _bingEndpoint = "https://bing.com";
 
@@ -44,6 +33,7 @@ class WallpaperInfo {
   final String copyright;
   final String copyrightLink;
   final String title;
+  final String hsh;
   final DateTime day;
 
   String get mobileUrl =>
@@ -51,19 +41,24 @@ class WallpaperInfo {
 
   String get fullSizeUrl => "$_bingEndpoint${urlBase}_UHD.jpg";
 
-  String get id => urlBase;
+  String get id =>
+      "${Util.formatDay(day)}_${hsh}_${ConfigService.wallpaperResolution}";
 
   /// The file where the wallpaper image is saved on the device
-  Future<File> get file => _getWallpaperFile(day);
+  Future<File> get file => _getFile();
 
   Future<bool> get isDownloaded async => (await file).exists();
 
-  WallpaperInfo(
-      {required this.urlBase,
-      required this.title,
-      required this.copyright,
-      required this.copyrightLink,
-      required this.day});
+  WallpaperInfo({
+    this.urlBase = "" ,
+    this.title = "",
+    this.copyright = "",
+    this.copyrightLink = "",
+    required this.day,
+    required this.hsh,
+  });
+
+
 
   @override
   bool operator ==(other) {
@@ -85,6 +80,12 @@ class WallpaperInfo {
   String toString() {
     return "WallpaperInfo(id=$id, title=$title, mobileUrl=$mobileUrl)";
   }
+
+  Future<File> _getFile() async {
+    var dir = await ConfigService.wallpaperCacheDir;
+    String name = "wallpaper_$id.jpg";
+    return File("${dir.path}/$name");
+  }
 }
 
 class WallpaperService {
@@ -99,19 +100,18 @@ class WallpaperService {
 
     if (existing.length < _maxWallpapers) return;
 
-    var dates = existing
-        .map((e) => e.date)
-        .whereType<String>()
-        .map((e) => DateTime.parse(e))
+    var walls = existing
+        .where((f) => f.date != null && f.hsh != null)
+        .map((f) => WallpaperInfo(day: f.date!, hsh: f.hsh!))
         .toList();
-    dates.sort((a, b) => b.compareTo(a)); // descending order
+    walls.sort((a, b) => b.day.compareTo(a.day)); // descending order
 
-    int len = dates.length;
-    for (var date in dates) {
+    int len = walls.length;
+    for (var wall in walls) {
       if (len < _maxWallpapers) {
         break;
       }
-      var file = await _getWallpaperFile(date);
+      var file = await wall.file;
 
       if (file.existsSync()) {
         file.delete();
@@ -128,10 +128,10 @@ class WallpaperService {
       return;
     }
     _logger.d("Downloading ${wallpaperInfo.mobileUrl}");
-    await Util.downloadFile(
-        wallpaperInfo.mobileUrl, await ConfigService.wallpaperCacheDir,
-        filename: _toFormattedWallpaperName(wallpaperInfo.day));
+    await Util.downloadWallpaper(wallpaperInfo);
   }
+
+
 
   /// Gets a wallpaper for the given [day]. Returns [null] if the wallpaper couldn't be fetched.
   /// Throws a [WallpaperOutOfDateException] when the day is too far in the past.
@@ -143,7 +143,7 @@ class WallpaperService {
 
     int diff = now.difference(day).inDays.abs();
 
-    _logger.d("Difference $diff");
+    // _logger.d("Difference $diff");
 
     if ((diff + 1) >= WALLPAPER_HISTORY_LIMIT) {
       throw WallpaperOutOfDateException(day);
@@ -174,7 +174,8 @@ class WallpaperService {
         title: data["title"],
         copyright: data["copyright"],
         copyrightLink: data["copyrightlink"],
-        day: DateTime.parse(data["enddate"])));
+        day: DateTime.parse(data["enddate"]),
+        hsh: data["hsh"]));
   }
 
   /// Returns as much wallpapers as possible
@@ -192,66 +193,10 @@ class WallpaperService {
     return wallpapers.toSet().toList(); // Remove duplicates
   }
 
-  // /// Gets a list of wallpapers from bing where [n] is the number of wp to fetch
-  // static Future<List<WallpaperInfo>> getWallpapersFromBing(
-  //     {String? local, int n = 1, DateTime? startDate}) async {
-  //   startDate ??= DateTime.now();
-  //   startDate = Util.normalizeDate(startDate);
-  //   local ??= ConfigService.region;
-  //   var now = Util.normalizeDate(DateTime.now());
-  //   List<WallpaperInfo> images = [];
-  //
-  //   var idx = startDate.difference(now).inDays;
-  //
-  //   List<DateTime> usedDays = [];
-  //
-  //   while (n > 0) {
-  //     String url = "$BASE_URL&mkt=$local&n=${min(8, n)}&idx=$idx";
-  //
-  //     _logger.d("Requesting $url");
-  //
-  //     Response response =
-  //         await get(Uri.parse(url), headers: {"Accept": "application/json"});
-  //
-  //     var resJson = json.decode(response.body) as Map<String, dynamic>;
-  //     List rawImages = resJson["images"] as List;
-  //
-  //     DateTime? lastDay;
-  //
-  //     int newWallpapers = 0;
-  //     for (var data in rawImages) {
-  //       lastDay = DateTime.parse(data["enddate"]);
-  //
-  //       if (usedDays.contains(lastDay)) {
-  //         continue;
-  //       }
-  //
-  //       images.add(WallpaperInfo(
-  //           urlBase: data["urlbase"],
-  //           title: data["title"],
-  //           copyright: data["copyright"],
-  //           copyrightLink: data["copyrightlink"],
-  //           day: lastDay));
-  //       usedDays.add(lastDay);
-  //       newWallpapers++;
-  //       n--;
-  //     }
-  //
-  //     if (newWallpapers <= 0) {
-  //       // This means we're getting repeated results, so stop fetching more
-  //       break;
-  //     }
-  //
-  //
-  //     idx += 8;
-  //   }
-  //
-  //   return images;
-  // }
-
   /// Gets the current wallpaper info
-  static Future<WallpaperInfo> getWallpaper({String? local}) async {
-    return (await getWallpaperFromBingByDay(DateTime.now(), local: local))!;
+  static Future<WallpaperInfo> getLatestWallpaper({String? local}) async {
+    local ??= ConfigService.region;
+    return (await _getWallpapersFromBing(n: 1, local: local, idx: 0)).first;
   }
 
   /// Sets the devices wallpaper from an [url]
@@ -318,21 +263,12 @@ class WallpaperService {
   static Future<List<WallpaperInfo>> _getOfflineWallpapers() async {
     var dir = await ConfigService.wallpaperCacheDir;
     var existing = Util.listDir(dir);
-    var dates = existing
-        .map((e) => e.date)
-        .whereType<String>()
-        .map((e) => DateTime.tryParse(e))
-        .whereNotNull()
+    var walls = existing
+        .where((f) => f.date != null && f.hsh != null)
+        .map((f) => WallpaperInfo(day: f.date!, hsh: f.hsh!))
         .toList();
-    dates.sort((a, b) => b.compareTo(a)); // descending order
-    return dates
-        .map((date) => WallpaperInfo(
-            urlBase: "",
-            title: "",
-            copyright: "",
-            copyrightLink: "",
-            day: date))
-        .toList();
+    walls.sort((a, b) => b.day.compareTo(a.day)); // descending order
+    return walls;
   }
 
   /// Tries to set the wallpaper from a given day
@@ -378,7 +314,7 @@ class WallpaperService {
         return;
       }
 
-      todaysWallpaper = await WallpaperService.getWallpaper();
+      todaysWallpaper = await WallpaperService.getLatestWallpaper();
       await WallpaperService.ensureDownloaded(todaysWallpaper);
     } else {
       logger.d("Using cached wallpaper today");
@@ -408,9 +344,9 @@ class WallpaperService {
       var theDayBeforeCurrent =
           currentWallpaperDay.subtract(const Duration(days: 1));
 
-      try{
+      try {
         await setWallpaperOf(day: theDayBeforeCurrent);
-      }on WallpaperOutOfDateException catch(e){
+      } on WallpaperOutOfDateException catch (e) {
         _logger.e(e.toString());
         await tryUpdateWallpaper();
       }

@@ -146,6 +146,7 @@ class _WallpaperViewState extends State<WallpaperView> {
         backgroundColor: Colors.grey.shade900,
         duration: const Duration(seconds: 3),
       ));
+      return;
     }
 
     showDialog(

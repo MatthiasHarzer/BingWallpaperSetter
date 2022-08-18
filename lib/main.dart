@@ -178,10 +178,10 @@ class _HomePageState extends State<HomePage> {
   /// Checks for wallpaper updates and sets the wallpaper variable. Returns true if updated or false if now update is present
   Future<bool> _updateWallpaper() async {
     WallpaperInfo newWallpaper =
-        await WallpaperService.getWallpaper(local: ConfigService.region);
+        await WallpaperService.getLatestWallpaper(local: ConfigService.region);
     await WallpaperService.ensureDownloaded(newWallpaper);
 
-    bool update = newWallpaper.mobileUrl != wallpaper?.mobileUrl;
+    bool update = newWallpaper.id != wallpaper?.id;
 
     setState(() {
       wallpaper = newWallpaper;
@@ -193,9 +193,6 @@ class _HomePageState extends State<HomePage> {
 
     return update;
   }
-
-
-
 
   /// Opens the settings window
   void _openSettingsView() {
