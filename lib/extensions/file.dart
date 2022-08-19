@@ -2,8 +2,8 @@ import 'dart:io';
 
 import 'package:bing_wallpaper_setter/extensions/list.dart';
 
-// Assuming a file in the format wallpaper_yyyy-MM-dd_local_resolution
-// where local in format en_GB and resolution 1920x1080
+// Assuming a file in the format wallpaper_yyyy-MM-dd_hsh_resolution
+// where hsh is a unique identifier for the image and resolution in format 1920x1080
 
 extension CustomFile on FileSystemEntity{
   String get name => uri.pathSegments.last;
