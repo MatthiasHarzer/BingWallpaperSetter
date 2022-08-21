@@ -19,14 +19,13 @@ class WallpaperView extends StatefulWidget {
   final AsyncBoolCallback? onUpdateWallpaper;
   final String? heroTag;
 
-  const WallpaperView(
-      {Key? key,
-      required this.wallpaper,
-      this.drawer,
-      this.onUpdateWallpaper,
-      this.heroTag,
-      })
-      : super(key: key);
+  const WallpaperView({
+    Key? key,
+    required this.wallpaper,
+    this.drawer,
+    this.onUpdateWallpaper,
+    this.heroTag,
+  }) : super(key: key);
 
   @override
   State<WallpaperView> createState() => _WallpaperViewState();
@@ -35,17 +34,16 @@ class WallpaperView extends StatefulWidget {
 class _WallpaperViewState extends State<WallpaperView> {
   WallpaperInfo? get wallpaper => widget.wallpaper;
 
+  /// Shows a scnackbar to inform the user, that the wallpaper hasn't loaded yet
+  void _showWallpaperNotLoadedSnackBar() {
+    Util.showSnackBar(context,
+        content: const Text("Wallpaper not loaded yet..."));
+  }
+
   /// Sets the current wallpaper
   void _setWallpaper() async {
     if (wallpaper == null) {
-      Util.showSnackBar(
-        context,
-        content: const Text(
-          "Wallpaper not loaded yet! Please wait...",
-          style: TextStyle(color: Colors.white),
-        ),
-      );
-
+      _showWallpaperNotLoadedSnackBar();
       return;
     }
 
@@ -127,12 +125,34 @@ class _WallpaperViewState extends State<WallpaperView> {
   /// Downloads wallpaper and opens a share dialog
   void _shareWallpaper() async {
     if (wallpaper == null) {
-      Util.showSnackBar(context,
-          content: const Text("Wallpaper not loaded yet."));
+      _showWallpaperNotLoadedSnackBar();
       return;
     }
     await WallpaperService.ensureDownloaded(wallpaper!);
     Share.shareFiles([(await wallpaper!.file).path], subject: wallpaper!.title);
+  }
+
+  /// Saves the wallpaper to the gallery
+  void _saveWallpaper() async {
+    if (wallpaper == null) {
+      _showWallpaperNotLoadedSnackBar();
+      return;
+    }
+    bool success = await WallpaperService.saveToGallery(wallpaper!);
+
+    if(!mounted) return;
+
+    if (success) {
+      Util.showSnackBar(context,
+          content: const Text("Successfully saved wallpaper to the gallery."));
+    }else{
+      Util.showSnackBar(context,
+          content: const Text("An error occurred saving the wallpaper."), action: SnackBarAction(
+              label: "TRY AGAIN",
+              onPressed: _saveWallpaper
+          ),
+      );
+    }
   }
 
   /// Opens the info view of the current wallpaper
@@ -178,7 +198,7 @@ class _WallpaperViewState extends State<WallpaperView> {
         child: CircularProgressIndicator(value: downloadProgress.progress),
       ),
     );
-    if(widget.heroTag != null){
+    if (widget.heroTag != null) {
       child = Hero(
         tag: widget.heroTag!,
         child: child,
@@ -199,8 +219,8 @@ class _WallpaperViewState extends State<WallpaperView> {
         backgroundColor: Colors.black38,
         actions: [
           IconButton(
-              onPressed: _openWallpaperInformationDialog,
-              icon: const Icon(Icons.info_outline),
+            onPressed: _openWallpaperInformationDialog,
+            icon: const Icon(Icons.info_outline),
           ),
         ],
       ),
@@ -249,6 +269,11 @@ class _WallpaperViewState extends State<WallpaperView> {
             label: "Set Wallpaper",
             child: const Icon(Icons.wallpaper),
             onTap: _setWallpaper,
+          ),
+          SpeedDialChild(
+            label: "Save",
+            child: const Icon(Icons.save),
+            onTap: _saveWallpaper,
           ),
           SpeedDialChild(
             label: "Share",

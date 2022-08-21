@@ -130,7 +130,15 @@ class _SettingsViewState extends State<SettingsView> {
                 },
                 onChanged: (String v) =>
                     setState(() => ConfigService.wallpaperResolution = v),
-              )
+              ),
+              _buildSwitchItem(
+                  title: "Save Wallpapers To Gallery",
+                  subtitle: "Newly downloaded wallpapers will be saved to the gallery",
+                  value: ConfigService.saveWallpaperToGallery,
+                  onChanged: (v) => setState((){
+                    ConfigService.saveWallpaperToGallery = v;
+                  }),
+              ),
             ],
           ),
           const Divider(),

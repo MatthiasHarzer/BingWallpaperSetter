@@ -7,9 +7,11 @@ import 'package:bing_wallpaper_setter/extensions/file.dart';
 import 'package:bing_wallpaper_setter/services/config_service.dart';
 import 'package:collection/collection.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart';
 import 'package:wallpaper_manager_flutter/wallpaper_manager_flutter.dart';
 import 'package:workmanager/workmanager.dart';
+import 'package:image_gallery_saver/image_gallery_saver.dart';
 
 import '../consts.dart' as consts;
 import '../util/util.dart';
@@ -27,6 +29,7 @@ class WallpaperOutOfDateException implements Exception {
 }
 
 class WallpaperInfo {
+
   final String _bingEndpoint = "https://bing.com";
 
   final String urlBase;
@@ -89,6 +92,7 @@ class WallpaperInfo {
 }
 
 class WallpaperService {
+  static const platform = MethodChannel('dev.taptwice.bing_wallpaper_app/pictures');
   static const _maxWallpapers = 50;
   static final _logger = getLogger();
 
@@ -121,17 +125,38 @@ class WallpaperService {
     }
   }
 
+  ///Saves the given [wallpaper] to the gallery on the device
+  static Future<bool> saveToGallery(WallpaperInfo wallpaper)async{
+    await ensureDownloaded(wallpaper, updateGallery: false);
+    File file = await wallpaper.file;
+
+    var directory = ConfigService.galleryDir;
+    await directory.create();
+
+    File? galleryFile = await Util.copyFile(from: await wallpaper.file, to: directory);
+
+    bool success = galleryFile != null;
+
+    if(success){
+      _logger.d("Saved ${file.name} to gallery ${directory.path}");
+
+      await galleryFile.setLastModified(wallpaper.day);
+    }
+    return success;
+  }
+
   /// Ensures the given wallpaper is downloaded to the device
-  static Future<void> ensureDownloaded(WallpaperInfo wallpaperInfo) async {
+  static Future<void> ensureDownloaded(WallpaperInfo wallpaperInfo, {bool updateGallery = true}) async {
     if (await wallpaperInfo.isDownloaded) {
       _logger.d("${wallpaperInfo.mobileUrl} already downloaded");
       return;
     }
     _logger.d("Downloading ${wallpaperInfo.mobileUrl}");
     await Util.downloadWallpaper(wallpaperInfo);
+    if(ConfigService.saveWallpaperToGallery && updateGallery){
+      await saveToGallery(wallpaperInfo);
+    }
   }
-
-
 
   /// Gets a wallpaper for the given [day]. Returns [null] if the wallpaper couldn't be fetched.
   /// Throws a [WallpaperOutOfDateException] when the day is too far in the past.
@@ -155,6 +180,9 @@ class WallpaperService {
   /// Makes a signle request to the bing endpoint an returns the fetched wallpapers.
   static Future<Iterable<WallpaperInfo>> _getWallpapersFromBing(
       {required String local, required int n, int idx = 0}) async {
+    if(local == "auto"){
+      local = ConfigService.autoRegionLocale;
+    }
     String url = "$BASE_URL&mkt=$local&n=$n&idx=$idx";
     _logger.d("Requesting $url");
     late Response response;

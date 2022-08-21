@@ -2,6 +2,7 @@
 
 import 'dart:io';
 
+import 'package:devicelocale/devicelocale.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path_provider_android/path_provider_android.dart';
@@ -16,6 +17,7 @@ const _REGION = "region";
 const _BG_WALLPAPER_TASK_LAST_RUN = "bg_wallpaper_task_last_run";
 const _CURRENT_WALLPAPER_DAY = "current_wallpaper_day";
 const _NEWEST_WALLPAPER_DAY = "newest_wallpaper_day";
+const _SAVE_WALLPAPER_TO_GALLERY = "save_wallpaper_to_gallery";
 
 /// Provides key-val-storage like functionalities with device storage and configurations
 class ConfigService {
@@ -25,10 +27,12 @@ class ConfigService {
   static late bool _dailyModeEnabled;
   static late String _wallpaperResolution;
   static late String _region;
+  static late String _autoRegionLocale;
   static late PackageInfo _packageInfo;
   static late int _bgWallpaperTaskLastRun;
   static late String _currentWallpaperDay;
   static late String _newestWallpaperDay;
+  static late bool _saveWallpaperToGallery;
 
   static Future<void> ensureInitialized() async {
     if (Platform.isAndroid) {
@@ -49,9 +53,11 @@ class ConfigService {
     _wallpaperResolution =
         _prefs.getString(_WALLPAPER_RESOLUTION) ?? availableResolutions.first;
     _region = _prefs.getString(_REGION) ?? availableRegions.keys.first;
+    _autoRegionLocale = (await Devicelocale.currentLocale).toString();
     _bgWallpaperTaskLastRun = _prefs.getInt(_BG_WALLPAPER_TASK_LAST_RUN) ?? 0;
     _currentWallpaperDay = _prefs.getString(_CURRENT_WALLPAPER_DAY) ?? "";
     _newestWallpaperDay = _prefs.getString(_NEWEST_WALLPAPER_DAY) ?? "";
+    _saveWallpaperToGallery = _prefs.getBool(_SAVE_WALLPAPER_TO_GALLERY) ?? false;
 
     _packageInfo = await PackageInfo.fromPlatform();
   }
@@ -66,11 +72,16 @@ class ConfigService {
     if (Platform.isAndroid) {
       return (await getExternalStorageDirectory())!;
     }
-    return await getApplicationDocumentsDirectory();
+    return localDirectory;
   }
 
   /// The directory to store wallpapers in
   static Future<Directory> get wallpaperCacheDir => publicDirectory;
+
+  /// The directory to store wallpaper in gallery
+  static Directory get galleryDir {
+    return Directory("/storage/emulated/0//Pictures/Bing Wallpapers");
+  }
 
   static PackageInfo get packageInfo => _packageInfo;
 
@@ -135,6 +146,9 @@ class ConfigService {
     _region = r;
   }
 
+  /// The regions locale defined by the device locale
+  static String get autoRegionLocale => _autoRegionLocale;
+
 
   /// The day of the last applied wallpaper
   static String get currentWallpaperDay => _currentWallpaperDay;
@@ -158,5 +172,13 @@ class ConfigService {
   static set bgWallpaperTaskLastRun(int last) {
     _prefs.setInt(_BG_WALLPAPER_TASK_LAST_RUN, last);
     _bgWallpaperTaskLastRun = last;
+  }
+
+  /// Whether to save new wallpapers to the devices gallery or not
+  static bool get saveWallpaperToGallery => _saveWallpaperToGallery;
+
+  static set saveWallpaperToGallery(bool enabled) {
+    _prefs.setBool(_SAVE_WALLPAPER_TO_GALLERY, enabled);
+    _saveWallpaperToGallery = enabled;
   }
 }

@@ -8,6 +8,7 @@ import 'package:bing_wallpaper_setter/views/wallpaper_view.dart';
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:optimize_battery/optimize_battery.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:workmanager/workmanager.dart';
 
@@ -61,6 +62,13 @@ void main() async {
   await WallpaperService.checkAndSetBackgroundTaskState();
 
   HomeWidget.registerBackgroundCallback(widgetBackgroundCallback);
+
+  // var r = await getExternalStorageDirectories(type: StorageDirectory.pictures) ?? [];
+  // for(var rr in r){
+  //   print(rr.path);
+  // }
+  // var r = await get();
+  // print(r?.path);
 
   runApp(const MyApp());
 }
@@ -119,6 +127,8 @@ class _HomePageState extends State<HomePage> {
   /// Checks for required permission
   void _checkPermission() async {
     bool storagePermissionGranted = await _requestStoragePermission();
+    // bool s = await _requestExternalStoragePermission();
+    // print(s);
     // bool ignoreBatteryOptimizationGranted =
     //     await _requestIgnoreBatteryOptimization();
 
@@ -151,8 +161,20 @@ class _HomePageState extends State<HomePage> {
     // }
   }
 
+  Future<bool> _requestExternalStoragePermission() async {
+
+    final PermissionStatus permission = await Permission.manageExternalStorage.status;
+    if (permission != PermissionStatus.granted) {
+      if (await Permission.manageExternalStorage.request() != PermissionStatus.granted) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   /// Requests storage permission. Returns whether permission is granted or not
   Future<bool> _requestStoragePermission() async {
+
     final PermissionStatus permission = await Permission.storage.status;
     if (permission != PermissionStatus.granted) {
       if (await Permission.storage.request() != PermissionStatus.granted) {
