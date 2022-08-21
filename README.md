@@ -8,6 +8,7 @@ An app to set your phones wallpaper to the Bing image of the day.
  - View and use older wallpapers
  - Android widget to update the wallpaper to the one of the day before 
  - Share a wallpaper
+ - Save new wallpapers to the gallery
  
 ## Planned and upcoming features
  - Newtork setting, to only update ony WiFi
