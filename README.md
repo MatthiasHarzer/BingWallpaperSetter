@@ -6,7 +6,7 @@ An app to set your phones wallpaper to the Bing image of the day.
  - Manually set the Bing image of the day as your wallpaper
  - Region specific wallpapers and descriptions
  - View and use older wallpapers
- - Android widget to update the wallpaper to the one of the day before 
+ - Android widget to update the wallpaper from the homescreen
  - Share a wallpaper
  - Save new wallpapers to the gallery
  
