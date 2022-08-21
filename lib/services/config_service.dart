@@ -80,7 +80,7 @@ class ConfigService {
 
   /// The directory to store wallpaper in gallery
   static Directory get galleryDir {
-    return Directory("/storage/emulated/0//Pictures/Bing Wallpapers");
+    return Directory("/storage/emulated/0/Pictures/Bing Wallpapers");
   }
 
   static PackageInfo get packageInfo => _packageInfo;

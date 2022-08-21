@@ -32,6 +32,7 @@ class WallpaperView extends StatefulWidget {
 }
 
 class _WallpaperViewState extends State<WallpaperView> {
+  final _logger = getLogger();
   WallpaperInfo? get wallpaper => widget.wallpaper;
 
   /// Shows a scnackbar to inform the user, that the wallpaper hasn't loaded yet
@@ -138,8 +139,14 @@ class _WallpaperViewState extends State<WallpaperView> {
       _showWallpaperNotLoadedSnackBar();
       return;
     }
-    bool success = await WallpaperService.saveToGallery(wallpaper!);
 
+    late bool success;
+    try {
+      success = await WallpaperService.saveToGallery(wallpaper!);
+    }catch(e){
+      _logger.d("An error occurred saving the wallpaper to the gallery: $e");
+      success = false;
+    }
     if(!mounted) return;
 
     if (success) {

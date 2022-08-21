@@ -130,6 +130,8 @@ class WallpaperService {
     await ensureDownloaded(wallpaper, updateGallery: false);
     File file = await wallpaper.file;
 
+    // _logger.d("Saving ${file.name} to gallery");
+
     var directory = ConfigService.galleryDir;
     await directory.create();
 
@@ -140,7 +142,8 @@ class WallpaperService {
     if(success){
       _logger.d("Saved ${file.name} to gallery ${directory.path}");
 
-      await galleryFile.setLastModified(wallpaper.day);
+      DateTime day = wallpaper.day.add(const Duration(hours: 6));
+      await galleryFile.setLastModified(day);
     }
     return success;
   }
