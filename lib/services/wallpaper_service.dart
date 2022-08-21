@@ -11,7 +11,6 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart';
 import 'package:wallpaper_manager_flutter/wallpaper_manager_flutter.dart';
 import 'package:workmanager/workmanager.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
 
 import '../consts.dart' as consts;
 import '../util/util.dart';
@@ -127,7 +126,7 @@ class WallpaperService {
 
   ///Saves the given [wallpaper] to the gallery on the device
   static Future<bool> saveToGallery(WallpaperInfo wallpaper)async{
-    await ensureDownloaded(wallpaper, updateGallery: false);
+    await ensureDownloaded(wallpaper);
     File file = await wallpaper.file;
 
     // _logger.d("Saving ${file.name} to gallery");
@@ -149,16 +148,14 @@ class WallpaperService {
   }
 
   /// Ensures the given wallpaper is downloaded to the device
-  static Future<void> ensureDownloaded(WallpaperInfo wallpaperInfo, {bool updateGallery = true}) async {
+  static Future<void> ensureDownloaded(WallpaperInfo wallpaperInfo) async {
     if (await wallpaperInfo.isDownloaded) {
       _logger.d("${wallpaperInfo.mobileUrl} already downloaded");
       return;
     }
     _logger.d("Downloading ${wallpaperInfo.mobileUrl}");
     await Util.downloadWallpaper(wallpaperInfo);
-    if(ConfigService.saveWallpaperToGallery && updateGallery){
-      await saveToGallery(wallpaperInfo);
-    }
+
   }
 
   /// Gets a wallpaper for the given [day]. Returns [null] if the wallpaper couldn't be fetched.
@@ -230,7 +227,7 @@ class WallpaperService {
     return (await _getWallpapersFromBing(n: 1, local: local, idx: 0)).first;
   }
 
-  /// Sets the devices wallpaper from an [url]
+  /// Sets the devices wallpaper
   static Future<void> setWallpaper(WallpaperInfo wallpaper, int screen) async {
     await ensureDownloaded(wallpaper);
 
@@ -255,6 +252,10 @@ class WallpaperService {
 
     if (current.millisecondsSinceEpoch > newestDate.millisecondsSinceEpoch) {
       ConfigService.newestWallpaperDay = Util.formatDay(current);
+    }
+
+    if(ConfigService.saveWallpaperToGallery){
+      await saveToGallery(wallpaper);
     }
 
     // await WallpaperManager.setWallpaperFromFile(file, screen);
