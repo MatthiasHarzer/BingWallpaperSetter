@@ -1,4 +1,4 @@
-# Bing Wallpaper Setter
+# Bing Wallpaper App
 
 An app to set your phones wallpaper to the Bing image of the day.
 
