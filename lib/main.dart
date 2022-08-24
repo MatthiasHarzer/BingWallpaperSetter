@@ -61,6 +61,8 @@ void main() async {
 
   HomeWidget.registerBackgroundCallback(widgetBackgroundCallback);
 
+  await Util.checkLogFileSize();
+
   // var r = await getExternalStorageDirectories(type: StorageDirectory.pictures) ?? [];
   // for(var rr in r){
   //   print(rr.path);
