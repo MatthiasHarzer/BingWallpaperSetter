@@ -190,11 +190,11 @@ class Util {
     final DateFormat formatter = DateFormat(format);
     return formatter.format(day);
   }
-
-  static DateTime normalizeDate(DateTime day) {
-    var string = formatDay(day);
-    return DateTime.parse(string);
-  }
+  //
+  // static DateTime normalizeDate(DateTime day) {
+  //   var string = formatDay(day);
+  //   return DateTime.parse(string);
+  // }
 
   /// Creates a scaffold route with transition to the given scaffold view
   static Route createScaffoldRoute({required Widget view}) {
