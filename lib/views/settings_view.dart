@@ -98,7 +98,7 @@ class _SettingsViewState extends State<SettingsView> {
             children: [
               _buildHeader(text: "Customize"),
               Visibility(
-                visible: false,
+                visible: true,
                 child: _buildSwitchItem(
                   title: "Daily Mode",
                   subtitle: "Update the wallpaper once a day",

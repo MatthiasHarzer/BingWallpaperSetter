@@ -49,7 +49,7 @@ class ConfigService {
     _wallpaperScreen =
         _prefs.getInt(_WALLPAPER_SCREEN) ?? availableScreens.keys.first;
     _dailyModeEnabled = _prefs.getBool(_DAILY_MODE_ENABLED) ?? false;
-    _dailyModeEnabled = false; // For now
+    // _dailyModeEnabled = false; // For now
     _wallpaperResolution =
         _prefs.getString(_WALLPAPER_RESOLUTION) ?? availableResolutions.first;
     _region = _prefs.getString(_REGION) ?? availableRegions.keys.first;
