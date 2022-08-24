@@ -208,7 +208,7 @@ class _HomePageState extends State<HomePage> {
     });
 
     if (update) {
-      logger.i("Updated wallpaper to ${wallpaper?.repr}");
+      logger.d("Updated wallpaper: $wallpaper");
     }
 
     return update;
