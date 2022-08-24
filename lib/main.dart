@@ -7,8 +7,6 @@ import 'package:bing_wallpaper_setter/views/settings_view.dart';
 import 'package:bing_wallpaper_setter/views/wallpaper_view.dart';
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
-import 'package:optimize_battery/optimize_battery.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:workmanager/workmanager.dart';
 
@@ -201,7 +199,7 @@ class _HomePageState extends State<HomePage> {
   Future<bool> _updateWallpaper() async {
     WallpaperInfo newWallpaper =
         await WallpaperService.getLatestWallpaper(local: ConfigService.region);
-    await WallpaperService.ensureDownloaded(newWallpaper);
+    await newWallpaper.ensureDownloaded();
 
     bool update = newWallpaper.id != wallpaper?.id;
 
@@ -210,7 +208,7 @@ class _HomePageState extends State<HomePage> {
     });
 
     if (update) {
-      logger.d("Updated wallpaper: $wallpaper");
+      logger.i("Updated wallpaper to ${wallpaper?.repr}");
     }
 
     return update;

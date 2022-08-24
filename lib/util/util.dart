@@ -21,16 +21,9 @@ class FileLogOutput extends LogOutput {
   }
 }
 
-class Printer extends LogPrinter {
-  @override
-  List<String> log(LogEvent event) {
-    return [event.message];
-  }
-}
-
 Logger getLogger() {
   return Logger(
-    printer: Printer(),
+    printer: PrettyPrinter(colors: true, noBoxingByDefault: true, methodCount: 0, ),
     level: Level.debug,
     output: MultiOutput([FileLogOutput(), ConsoleOutput()]),
     filter: ProductionFilter(), // For now
@@ -62,7 +55,7 @@ class Util {
     try {
       await from.copy(path);
     } catch (e) {
-      getLogger().d("Error copying file ${e.toString()}");
+      getLogger().e("Error copying file ${e.toString()}");
       return null;
     }
     await MediaScanner.loadMedia(path: path);

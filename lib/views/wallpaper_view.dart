@@ -129,7 +129,7 @@ class _WallpaperViewState extends State<WallpaperView> {
       _showWallpaperNotLoadedSnackBar();
       return;
     }
-    await WallpaperService.ensureDownloaded(wallpaper!);
+    await wallpaper!.ensureDownloaded();
     Share.shareFiles([(await wallpaper!.file).path], subject: wallpaper!.title);
   }
 
@@ -144,7 +144,7 @@ class _WallpaperViewState extends State<WallpaperView> {
     try {
       success = await WallpaperService.saveToGallery(wallpaper!);
     }catch(e){
-      _logger.d("An error occurred saving the wallpaper to the gallery: $e");
+      _logger.e("An error occurred saving the wallpaper to the gallery: $e");
       success = false;
     }
     if(!mounted) return;
