@@ -229,6 +229,7 @@ class WallpaperService {
   /// Gets the current wallpaper info
   static Future<WallpaperInfo> getLatestWallpaper({String? local}) async {
     local ??= ConfigService.region;
+    _logger.d("Fetching latest wallpaper from bing");
     return (await _getWallpapersFromBing(n: 1, local: local, idx: 0)).first;
   }
 
@@ -332,17 +333,19 @@ class WallpaperService {
   }
 
   /// Tries to update the wallpaper to the newest one. Fails if there is no connection and todays wallpaper isn't downloaded
-  static Future<void> tryUpdateWallpaper() async {
+  static Future<void> _tryUpdateWallpaper() async {
 
     var nowNormalized = DateTime.now().normalized;
     WallpaperInfo? todaysWallpaper =
         (await WallpaperService._getOfflineWallpapers()).firstWhereOrNull(
             (w) => w.day == nowNormalized);
-    _logger.d("Checking for wallpaper of ${nowNormalized.formatted}");
 
-    var connectivity = await Connectivity().checkConnectivity();
+    _logger.d("Checking for wallpaper of day ${nowNormalized.formatted}");
+
+
 
     if (todaysWallpaper == null) {
+      var connectivity = await Connectivity().checkConnectivity();
       if (![
         ConnectivityResult.mobile,
         ConnectivityResult.wifi,
@@ -352,16 +355,16 @@ class WallpaperService {
         return;
       }
 
-      todaysWallpaper = await WallpaperService.getLatestWallpaper();
+      todaysWallpaper = await getLatestWallpaper();
       await todaysWallpaper.ensureDownloaded();
     } else {
-      _logger.d("Using cached wallpaper today");
+      _logger.d("Using offline wallpaper today");
     }
 
-    await WallpaperService.setWallpaper(
+    await setWallpaper(
         todaysWallpaper, ConfigService.wallpaperScreen);
 
-    _logger.d("Wallpaper updated!");
+    _logger.i("Wallpaper updated!");
   }
 
   /// Update the wallpaper. If todays wallpaper was never applied, it will be, else the day before current will be used
@@ -376,7 +379,7 @@ class WallpaperService {
         newestWallpaperDay.millisecondsSinceEpoch) {
       // The newest wallpaper was never applied yet -> update
       _logger.i("Trying to update to newest wallpaper");
-      await tryUpdateWallpaper();
+      await _tryUpdateWallpaper();
     } else {
       _logger.d("Current wallpaper: ${currentWallpaperDay.formatted}");
       var theDayBeforeCurrent =
@@ -387,10 +390,25 @@ class WallpaperService {
         await setWallpaperOf(day: theDayBeforeCurrent);
       } on WallpaperOutOfDateException catch (e) {
         _logger.e(e.toString());
-        await tryUpdateWallpaper();
+        await _tryUpdateWallpaper();
       }catch(e){
         _logger.e("An error occurred: $e");
       }
     }
+  }
+
+  /// Updates the wallpaper to the newest, if it was never applied. Else nothing
+  static Future<void> updateWallpaperOnBackgroundTaskIntent() async{
+    var today = DateTime.now().normalized;
+    var newestWallpaperDay =
+        DateTime.tryParse(ConfigService.newestWallpaperDay) ?? DateTime(1800);
+
+    if(newestWallpaperDay == today){
+      // Newest wallpaper was applied today -> don't update wallpaper
+      return;
+    }
+
+    // update the wallpaper to the newest one
+    await _tryUpdateWallpaper();
   }
 }
