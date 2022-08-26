@@ -239,6 +239,8 @@ class WallpaperService {
 
     File file = await wallpaper.file;
 
+    _logger.i("W1 Updating wallpaper to ${wallpaper.repr} on screen = $screen");
+
     // Because setting wallpaper for both screens doesn't work for some reason (tested on Huawei Mate 10 Pro)
     if (screen == WallpaperManagerFlutter.BOTH_SCREENS) {
       WallpaperManagerFlutter()
@@ -263,6 +265,8 @@ class WallpaperService {
     if(ConfigService.saveWallpaperToGallery){
       await saveToGallery(wallpaper);
     }
+
+    _logger.d("W2 Wallpaper updated!");
 
     // await WallpaperManager.setWallpaperFromFile(file, screen);
   }
@@ -340,7 +344,8 @@ class WallpaperService {
         (await WallpaperService._getOfflineWallpapers()).firstWhereOrNull(
             (w) => w.day == nowNormalized);
 
-    _logger.d("Checking for wallpaper of day ${nowNormalized.formatted}");
+    _logger.i("Trying to update to newest wallpaper (${nowNormalized.formatted})");
+    // _logger.d("Checking for wallpaper of day ${nowNormalized.formatted}");
 
 
 
@@ -354,17 +359,13 @@ class WallpaperService {
         _logger.i("No internet connection. Skipping...");
         return;
       }
-
       todaysWallpaper = await getLatestWallpaper();
       await todaysWallpaper.ensureDownloaded();
     } else {
-      _logger.d("Using offline wallpaper today");
+      _logger.d("Using offline wallpaper");
     }
 
-    await setWallpaper(
-        todaysWallpaper, ConfigService.wallpaperScreen);
-
-    _logger.i("Wallpaper updated!");
+    await setWallpaper(todaysWallpaper, ConfigService.wallpaperScreen);
   }
 
   /// Update the wallpaper. If todays wallpaper was never applied, it will be, else the day before current will be used
@@ -405,6 +406,7 @@ class WallpaperService {
 
     if(newestWallpaperDay == today){
       // Newest wallpaper was applied today -> don't update wallpaper
+      _logger.d("Newest wallpaper has already been set today -> skipping....");
       return;
     }
 

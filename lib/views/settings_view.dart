@@ -27,6 +27,28 @@ class _SettingsViewState extends State<SettingsView> {
   //   )
   // }
 
+  /// Build an item with a single icon button
+  Widget _buildIconButton({
+  required String title,
+    required VoidCallback onClick,
+    required IconData icon,
+    bool enabled = true,
+    String? subtitle,
+    String? tooltip,
+}){
+    return ListTile(
+      title: Text(title),
+      subtitle: subtitle != null ? Text(subtitle) : null,
+      trailing: IconButton(
+        onPressed: !enabled ? null : onClick,
+        icon: Icon(icon),
+        color: Colors.grey[300],
+        splashRadius: 25,
+        tooltip: tooltip,
+      ),
+    );
+  }
+
   /// Builds a switch option
   Widget _buildSwitch({
     required String title,
@@ -189,13 +211,30 @@ class _SettingsViewState extends State<SettingsView> {
             visible: ConfigService.showDebugValues,
             child: Column(
               children: [
-                ListTile(
-                  title: const Text("Current Wallpaper Day"),
-                  subtitle: Text(ConfigService.currentWallpaperDay),
+                _buildIconButton(
+                  title: "Current Wallpaper Day",
+                  subtitle: ConfigService.currentWallpaperDay,
+                  onClick: (){
+                    setState(() {
+                      ConfigService.currentWallpaperDay = "";
+                    });
+                  },
+                  icon: Icons.delete,
+                  tooltip: "Delete Data",
+                  enabled: ConfigService.currentWallpaperDay.isNotEmpty
                 ),
-                ListTile(
-                  title: const Text("Newest Wallpaper Day"),
-                  subtitle: Text(ConfigService.newestWallpaperDay),
+                _buildIconButton(
+                  title: "Newest Wallpaper Day",
+                  subtitle: ConfigService.newestWallpaperDay,
+                    onClick: (){
+                      setState(() {
+                        ConfigService.newestWallpaperDay = "";
+                      });
+                    },
+                    icon: Icons.delete,
+                    tooltip: "Delete Data",
+                    enabled: ConfigService.newestWallpaperDay.isNotEmpty
+
                 ),
                 ListTile(
                   title: const Text("Auto Region Locale"),
