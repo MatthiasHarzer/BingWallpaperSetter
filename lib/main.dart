@@ -20,7 +20,7 @@ import 'drawer.dart';
 void workManagerCallbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
     var logger = getLogger();
-    logger.i("Running background task");
+    logger.i("---- Running background task ----");
     try {
       await ConfigService.ensureInitialized();
 
@@ -36,6 +36,7 @@ void workManagerCallbackDispatcher() {
     } catch (error) {
       logger.e(error.toString());
     }
+    logger.i("---- Finished background task -----");
 
     return true;
   });
