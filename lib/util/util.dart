@@ -16,11 +16,11 @@ import '../services/wallpaper_service.dart';
 /// Uses [Util.logToFile] to log all events
 class FileLogOutput extends LogOutput {
   @override
-  void output(OutputEvent event) async{
+  void output(OutputEvent event){
     var ansiColorString = PrettyPrinter.levelColors[event.level].toString();
     for (var line in event.lines) {
       String cleanedLine = line.replaceAll(ansiColorString, ""); // Remove ansi color string before writing to file
-      Util.logToFile(cleanedLine);
+      Util.logToFileSync(cleanedLine);
     }
   }
 }
@@ -109,7 +109,8 @@ class Util {
 
   static String _formatMessage(String msg) {
     var date = DateTime.now();
-    return "[${date.year}-${date.month}-${date.day} @ ${date.hour}:${date.minute}:${date.second}] $msg";
+    DateFormat format = DateFormat("yyyy-MM-dd @ HH:mm:ss");
+    return "[${format.format(date)}] $msg";
   }
 
   /// Logs the message to a local file in [ConfigService.publicDirectory]
@@ -120,6 +121,14 @@ class Util {
     message = _formatMessage(message);
 
     await file.writeAsString("$message\n", mode: FileMode.append);
+  }
+
+  /// Like [logToFile], but sync
+  static void logToFileSync(String message){
+    var dir = ConfigService.publicDirectory;
+    File file = File("${dir.path}/log.txt");
+    message = _formatMessage(message);
+    file.writeAsStringSync("$message\n", mode: FileMode.append);
   }
 
   /// Checks if the log file is too large an deletes line if so

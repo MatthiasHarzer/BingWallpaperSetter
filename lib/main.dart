@@ -59,7 +59,7 @@ void main() async {
   WallpaperService.ensureMaxCacheWallpapers();
 
   await Workmanager()
-      .initialize(workManagerCallbackDispatcher, isInDebugMode: true);
+      .initialize(workManagerCallbackDispatcher, isInDebugMode: false);
   await WallpaperService.checkAndSetBackgroundTaskState();
 
   HomeWidget.registerBackgroundCallback(widgetBackgroundCallback);
