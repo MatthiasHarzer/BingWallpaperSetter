@@ -35,6 +35,7 @@ void workManagerCallbackDispatcher() {
       }
     } catch (error) {
       logger.e(error.toString());
+      return false;
     }
     logger.i("---- Finished background task -----");
 
@@ -55,7 +56,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await ConfigService.ensureInitialized();
-  await WallpaperService.ensureMaxCacheWallpapers();
+  WallpaperService.ensureMaxCacheWallpapers();
 
   await Workmanager()
       .initialize(workManagerCallbackDispatcher, isInDebugMode: true);
@@ -163,6 +164,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  // ignore: unused_element
   Future<bool> _requestExternalStoragePermission() async {
 
     final PermissionStatus permission = await Permission.manageExternalStorage.status;

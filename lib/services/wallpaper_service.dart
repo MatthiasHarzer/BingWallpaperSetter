@@ -52,9 +52,9 @@ class WallpaperInfo {
 
 
   /// The file where the wallpaper image is saved on the device
-  Future<File> get file => _getFile();
+  File get file => _getFile();
 
-  Future<bool> get isDownloaded async => (await file).exists();
+  Future<bool> get isDownloaded async => file.exists();
 
   WallpaperInfo({
     this.urlBase = "" ,
@@ -88,8 +88,8 @@ class WallpaperInfo {
     return "WallpaperInfo(id=$id, title=$title, mobileUrl=$mobileUrl)";
   }
 
-  Future<File> _getFile() async {
-    var dir = await ConfigService.wallpaperCacheDir;
+  File _getFile(){
+    var dir = ConfigService.wallpaperCacheDir;
     String name = "wallpaper_$id.jpg";
     return File("${dir.path}/$name");
   }
@@ -111,10 +111,10 @@ class WallpaperService {
 
 
   /// Deletes old wallpapers
-  static Future<void> ensureMaxCacheWallpapers() async {
-    var dir = await ConfigService.wallpaperCacheDir;
+  static void ensureMaxCacheWallpapers() async {
+    var dir = ConfigService.wallpaperCacheDir;
 
-    var existing = Util.listDir(dir, regExp: consts.WALLPAPER_REGEX);
+    var existing = await Util.listDir(dir, regExp: consts.WALLPAPER_REGEX);
 
     if (existing.length < _maxWallpapers) return;
 
@@ -129,7 +129,7 @@ class WallpaperService {
       if (len < _maxWallpapers) {
         break;
       }
-      var file = await wall.file;
+      var file = wall.file;
 
       if (file.existsSync()) {
         file.delete();
@@ -142,14 +142,14 @@ class WallpaperService {
   ///Saves the given [wallpaper] to the gallery on the device
   static Future<bool> saveToGallery(WallpaperInfo wallpaper)async{
     await wallpaper.ensureDownloaded();
-    File file = await wallpaper.file;
+    File file = wallpaper.file;
 
     // _logger.d("Saving ${file.name} to gallery");
 
     var directory = ConfigService.galleryDir;
     await directory.create();
 
-    File? galleryFile = await Util.copyFile(from: await wallpaper.file, to: directory);
+    File? galleryFile = await Util.copyFile(from: file, to: directory);
 
     bool success = galleryFile != null;
 
@@ -237,7 +237,7 @@ class WallpaperService {
   static Future<void> setWallpaper(WallpaperInfo wallpaper, int screen) async {
     await wallpaper.ensureDownloaded();
 
-    File file = await wallpaper.file;
+    File file = wallpaper.file;
 
     _logger.i("W1 Updating wallpaper to ${wallpaper.repr} on screen = $screen");
 
@@ -303,8 +303,8 @@ class WallpaperService {
 
   /// Returns a list of WallpaperInfo's with the downloaded (on-device) wallpapers
   static Future<List<WallpaperInfo>> _getOfflineWallpapers() async {
-    var dir = await ConfigService.wallpaperCacheDir;
-    var existing = Util.listDir(dir);
+    var dir = ConfigService.wallpaperCacheDir;
+    var existing = await Util.listDir(dir);
     var walls = existing
         .where((f) => f.date != null && f.hsh != null)
         .map((f) => WallpaperInfo(day: f.date!, hsh: f.hsh!))

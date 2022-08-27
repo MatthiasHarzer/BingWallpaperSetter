@@ -130,7 +130,7 @@ class _WallpaperViewState extends State<WallpaperView> {
       return;
     }
     await wallpaper!.ensureDownloaded();
-    Share.shareFiles([(await wallpaper!.file).path], subject: wallpaper!.title);
+    Share.shareFiles([wallpaper!.file.path], subject: wallpaper!.title);
   }
 
   /// Saves the wallpaper to the gallery

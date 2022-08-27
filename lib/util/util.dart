@@ -16,7 +16,7 @@ import '../services/wallpaper_service.dart';
 /// Uses [Util.logToFile] to log all events
 class FileLogOutput extends LogOutput {
   @override
-  void output(OutputEvent event) {
+  void output(OutputEvent event) async{
     var ansiColorString = PrettyPrinter.levelColors[event.level].toString();
     for (var line in event.lines) {
       String cleanedLine = line.replaceAll(ansiColorString, ""); // Remove ansi color string before writing to file
@@ -101,9 +101,9 @@ class Util {
   }
 
   static Future<void> downloadWallpaper(WallpaperInfo wallpaper) async {
-    File file = await wallpaper.file;
+    File file = wallpaper.file;
     await _downloadFile(
-        wallpaper.mobileUrl, await ConfigService.wallpaperCacheDir,
+        wallpaper.mobileUrl, ConfigService.wallpaperCacheDir,
         filename: file.name);
   }
 
@@ -114,7 +114,7 @@ class Util {
 
   /// Logs the message to a local file in [ConfigService.publicDirectory]
   static Future<void> logToFile(String message) async {
-    var dir = await ConfigService.publicDirectory;
+    var dir = ConfigService.publicDirectory;
     File file = File("${dir.path}/log.txt");
 
     message = _formatMessage(message);
@@ -124,7 +124,7 @@ class Util {
 
   /// Checks if the log file is too large an deletes line if so
   static Future<void> checkLogFileSize() async {
-    var dir = await ConfigService.publicDirectory;
+    var dir = ConfigService.publicDirectory;
     File file = File("${dir.path}/log.txt");
     var lines = await file.readAsLines();
     int diff = lines.length - consts.LOG_FILE_LINES_LIMIT;
@@ -144,7 +144,7 @@ class Util {
 
   /// Opens the log file in the explorer
   static Future<void> openLogFile() async {
-    String path = (await ConfigService.publicDirectory).path;
+    String path = ConfigService.publicDirectory.path;
 
     if (!(await File("$path/log.txt").exists())) {
       await logToFile("This is the beginning of the log file.");
@@ -171,8 +171,8 @@ class Util {
   }
 
   /// Returns a list of files contained in the [directory] matching the [regExp]
-  static List<FileSystemEntity> listDir(Directory directory, {RegExp? regExp}) {
-    final entities = directory.listSync();
+  static Future<List<FileSystemEntity>> listDir(Directory directory, {RegExp? regExp}) async{
+    final entities = await directory.list().toList();
     return (regExp == null
             ? entities
             : entities.where(

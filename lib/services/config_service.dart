@@ -36,6 +36,16 @@ class ConfigService {
   static late bool _saveWallpaperToGallery;
   static late bool _showDebugValues;
 
+  /// A private directory to store data in. Not visible in the filesystem
+  static late Directory localDirectory;
+
+  /// A directory to store data, visible in the filesystem. Only available on android.
+  /// Falls back to [localDirectory] when on other platforms.
+  static late Directory publicDirectory;
+
+  /// The directory to store wallpapers in
+  static late Directory wallpaperCacheDir;
+
   static Future<void> ensureInitialized() async {
     if (Platform.isAndroid) {
       SharedPreferencesAndroid.registerWith();
@@ -63,6 +73,9 @@ class ConfigService {
     _showDebugValues = _prefs.getBool(_SHOW_DEBUG_VALUES) ?? false;
 
     _packageInfo = await PackageInfo.fromPlatform();
+    localDirectory = await getApplicationDocumentsDirectory();
+    publicDirectory = (await getExternalStorageDirectory())!; // Requires android platform
+    wallpaperCacheDir = publicDirectory;
   }
 
   static Future<void> reload() async{
@@ -70,21 +83,6 @@ class ConfigService {
     await _load();
   }
 
-  /// A private directory to store data in. Not visible in the filesystem
-  static Future<Directory> get localDirectory =>
-      getApplicationDocumentsDirectory();
-
-  /// A directory to store data, visible in the filesystem. Only available on android.
-  /// Falls back to [localDirectory] when on other platforms.
-  static Future<Directory> get publicDirectory async {
-    if (Platform.isAndroid) {
-      return (await getExternalStorageDirectory())!;
-    }
-    return localDirectory;
-  }
-
-  /// The directory to store wallpapers in
-  static Future<Directory> get wallpaperCacheDir => publicDirectory;
 
   /// The directory to store wallpaper in gallery
   static Directory get galleryDir {
