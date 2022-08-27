@@ -18,6 +18,7 @@ const _BG_WALLPAPER_TASK_LAST_RUN = "bg_wallpaper_task_last_run";
 const _CURRENT_WALLPAPER_DAY = "current_wallpaper_day";
 const _NEWEST_WALLPAPER_DAY = "newest_wallpaper_day";
 const _SAVE_WALLPAPER_TO_GALLERY = "save_wallpaper_to_gallery";
+const _SHOW_DEBUG_VALUES = "show_debug_values";
 
 /// Provides key-val-storage like functionalities with device storage and configurations
 class ConfigService {
@@ -33,6 +34,7 @@ class ConfigService {
   static late String _currentWallpaperDay;
   static late String _newestWallpaperDay;
   static late bool _saveWallpaperToGallery;
+  static late bool _showDebugValues;
 
   static Future<void> ensureInitialized() async {
     if (Platform.isAndroid) {
@@ -49,7 +51,7 @@ class ConfigService {
     _wallpaperScreen =
         _prefs.getInt(_WALLPAPER_SCREEN) ?? availableScreens.keys.first;
     _dailyModeEnabled = _prefs.getBool(_DAILY_MODE_ENABLED) ?? false;
-    _dailyModeEnabled = false; // For now
+    // _dailyModeEnabled = false; // For now
     _wallpaperResolution =
         _prefs.getString(_WALLPAPER_RESOLUTION) ?? availableResolutions.first;
     _region = _prefs.getString(_REGION) ?? availableRegions.keys.first;
@@ -58,8 +60,14 @@ class ConfigService {
     _currentWallpaperDay = _prefs.getString(_CURRENT_WALLPAPER_DAY) ?? "";
     _newestWallpaperDay = _prefs.getString(_NEWEST_WALLPAPER_DAY) ?? "";
     _saveWallpaperToGallery = _prefs.getBool(_SAVE_WALLPAPER_TO_GALLERY) ?? false;
+    _showDebugValues = _prefs.getBool(_SHOW_DEBUG_VALUES) ?? false;
 
     _packageInfo = await PackageInfo.fromPlatform();
+  }
+
+  static Future<void> reload() async{
+    await _prefs.reload();
+    await _load();
   }
 
   /// A private directory to store data in. Not visible in the filesystem
@@ -180,5 +188,13 @@ class ConfigService {
   static set saveWallpaperToGallery(bool enabled) {
     _prefs.setBool(_SAVE_WALLPAPER_TO_GALLERY, enabled);
     _saveWallpaperToGallery = enabled;
+  }
+
+  /// Whether to show or hide debug values
+  static bool get showDebugValues => _showDebugValues;
+
+  static set showDebugValues(bool enabled) {
+    _prefs.setBool(_SHOW_DEBUG_VALUES, enabled);
+    _showDebugValues = enabled;
   }
 }

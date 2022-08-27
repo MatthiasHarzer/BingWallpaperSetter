@@ -2,6 +2,7 @@ import 'package:bing_wallpaper_setter/services/config_service.dart';
 import 'package:flutter/material.dart';
 
 import '../services/wallpaper_service.dart';
+import '../util/util.dart';
 
 class SettingsView extends StatefulWidget {
   const SettingsView({Key? key}) : super(key: key);
@@ -19,17 +20,61 @@ class _SettingsViewState extends State<SettingsView> {
     await WallpaperService.checkAndSetBackgroundTaskState();
   }
 
-  Widget _buildSwitchItem(
-      {required String title,
-      required bool value,
-      required Function(bool) onChanged,
-      String? subtitle}) {
+  // Widget _buildInfoitem({required String title, required String subtitle}) {
+  //   return ListTile(
+  //     title: Text(title),
+  //     subtitle: ,
+  //   )
+  // }
+
+  /// Build an item with a single icon button
+  Widget _buildIconButton({
+  required String title,
+    required VoidCallback onClick,
+    required IconData icon,
+    bool enabled = true,
+    String? subtitle,
+    String? tooltip,
+}){
+    return ListTile(
+      title: Text(title),
+      subtitle: subtitle != null ? Text(subtitle) : null,
+      trailing: IconButton(
+        onPressed: !enabled ? null : onClick,
+        icon: Icon(icon),
+        color: Colors.grey[300],
+        splashRadius: 25,
+        tooltip: tooltip,
+      ),
+    );
+  }
+
+  /// Builds a switch option
+  Widget _buildSwitch({
+    required String title,
+    required bool value,
+    required Function(bool) onChanged,
+    String? subtitle,
+    Widget? enabledAction,
+  }) {
     return ListTile(
       title: Text(title),
       subtitle: subtitle != null ? Text(subtitle) : Container(),
-      trailing: Switch(
-        value: value,
-        onChanged: onChanged,
+      trailing: FittedBox(
+        fit: BoxFit.fill,
+        child: Row(
+          children: [
+            Visibility(
+              visible: value && enabledAction != null,
+              child: enabledAction ?? Container(),
+            ),
+            Switch(
+              value: value,
+              onChanged: onChanged,
+            ),
+
+          ],
+        ),
       ),
       onTap: () => onChanged(!value),
     );
@@ -52,7 +97,7 @@ class _SettingsViewState extends State<SettingsView> {
         .values
         .toList();
     final GlobalKey dropDownKey = GlobalKey();
-    if(!options.keys.contains(value)){
+    if (!options.keys.contains(value)) {
       value = null;
     }
     return ListTile(
@@ -92,14 +137,14 @@ class _SettingsViewState extends State<SettingsView> {
       appBar: AppBar(
         title: const Text("Settings"),
       ),
-      body: Column(
+      body: ListView(
         children: [
           Column(
             children: [
               _buildHeader(text: "Customize"),
               Visibility(
-                visible: false,
-                child: _buildSwitchItem(
+                visible: true,
+                child: _buildSwitch(
                   title: "Daily Mode",
                   subtitle: "Update the wallpaper once a day",
                   value: ConfigService.dailyModeEnabled,
@@ -131,17 +176,78 @@ class _SettingsViewState extends State<SettingsView> {
                 onChanged: (String v) =>
                     setState(() => ConfigService.wallpaperResolution = v),
               ),
-              _buildSwitchItem(
-                  title: "Save Wallpapers To Gallery",
-                  subtitle: "Newly downloaded wallpapers will be saved to the gallery",
-                  value: ConfigService.saveWallpaperToGallery,
-                  onChanged: (v) => setState((){
-                    ConfigService.saveWallpaperToGallery = v;
-                  }),
+              _buildSwitch(
+                title: "Save Wallpapers To Gallery",
+                subtitle:
+                    "Newly downloaded wallpapers will be saved to the gallery",
+                value: ConfigService.saveWallpaperToGallery,
+                onChanged: (v) => setState(() {
+                  ConfigService.saveWallpaperToGallery = v;
+                }),
               ),
             ],
           ),
           const Divider(),
+          _buildHeader(text: "DEBUG"),
+          _buildSwitch(
+            title: "Show Debug Values",
+            subtitle: "Only enable when needed",
+            value: ConfigService.showDebugValues,
+            onChanged: (bool v) async {
+              await ConfigService.reload();
+              setState(() => ConfigService.showDebugValues = v);
+            },
+            enabledAction: IconButton(
+              splashRadius: 25,
+              onPressed: () async {
+                await ConfigService.reload();
+                setState(() {});
+              },
+              icon: const Icon(Icons.sync),
+              tooltip: "Reload",
+            ),
+          ),
+          Visibility(
+            visible: ConfigService.showDebugValues,
+            child: Column(
+              children: [
+                _buildIconButton(
+                  title: "Current Wallpaper Day",
+                  subtitle: ConfigService.currentWallpaperDay,
+                  onClick: (){
+                    setState(() {
+                      ConfigService.currentWallpaperDay = "";
+                    });
+                  },
+                  icon: Icons.delete,
+                  tooltip: "Delete Data",
+                  enabled: ConfigService.currentWallpaperDay.isNotEmpty
+                ),
+                _buildIconButton(
+                  title: "Newest Wallpaper Day",
+                  subtitle: ConfigService.newestWallpaperDay,
+                    onClick: (){
+                      setState(() {
+                        ConfigService.newestWallpaperDay = "";
+                      });
+                    },
+                    icon: Icons.delete,
+                    tooltip: "Delete Data",
+                    enabled: ConfigService.newestWallpaperDay.isNotEmpty
+
+                ),
+                ListTile(
+                  title: const Text("Auto Region Locale"),
+                  subtitle: Text(ConfigService.autoRegionLocale),
+                ),
+                ListTile(
+                  title: const Text("Background Task Last Run"),
+                  subtitle: Text(Util.tsToFormattedTime(
+                      ConfigService.bgWallpaperTaskLastRun)),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
