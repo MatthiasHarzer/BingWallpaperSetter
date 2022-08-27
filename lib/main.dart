@@ -22,12 +22,12 @@ void workManagerCallbackDispatcher() {
     await ConfigService.ensureInitialized();
     var logger = getLogger();
     try {
-      logger.i("---- Running background task ----");
+      logger.i("---- Running background task $task ----");
       switch (task) {
         case consts.BG_WALLPAPER_TASK_ID:
           if (!ConfigService.dailyModeEnabled) break;
 
-          // await WallpaperService.updateWallpaperOnBackgroundTaskIntent();
+          await WallpaperService.updateWallpaperOnBackgroundTaskIntent();
 
           ConfigService.bgWallpaperTaskLastRun =
               DateTime.now().millisecondsSinceEpoch;
