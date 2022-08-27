@@ -39,7 +39,7 @@ class _OldWallpapersViewState extends State<OldWallpapersView> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text("Old Wallpapers"),
+        title: const Text("Wallpaper History"),
         backgroundColor: Colors.black38,
       ),
       body: SingleChildScrollView(

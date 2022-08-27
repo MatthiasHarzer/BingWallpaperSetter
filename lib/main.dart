@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:workmanager/workmanager.dart';
+import 'package:optimize_battery/optimize_battery.dart';
 
 import 'consts.dart' as consts;
 import 'drawer.dart';
@@ -19,7 +20,7 @@ import 'drawer.dart';
 void workManagerCallbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
     var logger = getLogger();
-    logger.d("Running background task");
+    logger.i("---- Running background task ----");
     try {
       await ConfigService.ensureInitialized();
 
@@ -27,7 +28,7 @@ void workManagerCallbackDispatcher() {
         case consts.BG_WALLPAPER_TASK_ID:
           if (!ConfigService.dailyModeEnabled) break;
 
-          await WallpaperService.tryUpdateWallpaper();
+          // await WallpaperService.updateWallpaperOnBackgroundTaskIntent();
 
           ConfigService.bgWallpaperTaskLastRun =
               DateTime.now().millisecondsSinceEpoch;
@@ -35,6 +36,7 @@ void workManagerCallbackDispatcher() {
     } catch (error) {
       logger.e(error.toString());
     }
+    logger.i("---- Finished background task -----");
 
     return true;
   });
@@ -60,6 +62,8 @@ void main() async {
   await WallpaperService.checkAndSetBackgroundTaskState();
 
   HomeWidget.registerBackgroundCallback(widgetBackgroundCallback);
+
+  await Util.checkLogFileSize();
 
   // var r = await getExternalStorageDirectories(type: StorageDirectory.pictures) ?? [];
   // for(var rr in r){
@@ -127,8 +131,8 @@ class _HomePageState extends State<HomePage> {
     bool storagePermissionGranted = await _requestStoragePermission();
     // bool s = await _requestExternalStoragePermission();
     // print(s);
-    // bool ignoreBatteryOptimizationGranted =
-    //     await _requestIgnoreBatteryOptimization();
+    bool ignoreBatteryOptimizationGranted =
+        await _requestIgnoreBatteryOptimization();
 
     if (!mounted) return;
 
@@ -139,24 +143,24 @@ class _HomePageState extends State<HomePage> {
         content: const Text(
             "Storage permission denied. The app might not work correctly."),
         action: SnackBarAction(
-          label: "OPEN APP SETTINGS",
+          label: "OPEN SETTINGS",
           onPressed: () => openAppSettings(),
         ),
       );
     }
 
-    // if (!ignoreBatteryOptimizationGranted) {
-    //   Util.showSnackBar(
-    //     context,
-    //     seconds: 30,
-    //     content: const Text(
-    //         "Battery optimization might negatively influence the behavior of the app."),
-    //     action: SnackBarAction(
-    //       label: "OPEN SETTINGS",
-    //       onPressed: () => OptimizeBattery.openBatteryOptimizationSettings(),
-    //     ),
-    //   );
-    // }
+    if (!ignoreBatteryOptimizationGranted) {
+      Util.showSnackBar(
+        context,
+        seconds: 30,
+        content: const Text(
+            "Battery optimization might negatively influence the behavior of the app."),
+        action: SnackBarAction(
+          label: "OPEN SETTINGS",
+          onPressed: () => OptimizeBattery.openBatteryOptimizationSettings(),
+        ),
+      );
+    }
   }
 
   Future<bool> _requestExternalStoragePermission() async {

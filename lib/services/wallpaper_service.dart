@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:bing_wallpaper_setter/consts.dart';
+import 'package:bing_wallpaper_setter/extensions/datetime.dart';
 import 'package:bing_wallpaper_setter/extensions/file.dart';
 import 'package:bing_wallpaper_setter/services/config_service.dart';
 import 'package:collection/collection.dart';
@@ -23,7 +24,7 @@ class WallpaperOutOfDateException implements Exception {
 
   @override
   String toString() {
-    return "${Util.formatDay(day)} is too far in the past and can't be fetched.";
+    return "${day.formatted} is too far in the past and can't be fetched.";
   }
 }
 final _logger = getLogger();
@@ -39,7 +40,7 @@ class WallpaperInfo {
   final String hsh;
   final DateTime day;
 
-  String get repr => "${Util.formatDay(day)} @ ${ConfigService.wallpaperResolution} (hsh=$hsh)";
+  String get repr => "${day.formatted} @ ${ConfigService.wallpaperResolution} (hsh=$hsh)";
 
   String get mobileUrl =>
       "$_bingEndpoint${urlBase}_${ConfigService.wallpaperResolution}.jpg";
@@ -47,7 +48,7 @@ class WallpaperInfo {
   String get fullSizeUrl => "$_bingEndpoint${urlBase}_UHD.jpg";
 
   String get id =>
-      "${Util.formatDay(day)}_${hsh}_${ConfigService.wallpaperResolution}";
+      "${day.formatted}_${hsh}_${ConfigService.wallpaperResolution}";
 
 
   /// The file where the wallpaper image is saved on the device
@@ -167,8 +168,8 @@ class WallpaperService {
   static Future<WallpaperInfo?> getWallpaperFromBingByDay(DateTime day,
       {String? local}) async {
     local ??= ConfigService.region;
-    day = Util.normalizeDate(day);
-    var now = Util.normalizeDate(DateTime.now());
+    day = day.normalized;
+    var now = DateTime.now().normalized;
 
     int diff = now.difference(day).inDays.abs();
 
@@ -247,15 +248,15 @@ class WallpaperService {
       WallpaperManagerFlutter().setwallpaperfromFile(file, screen);
     }
 
-    ConfigService.currentWallpaperDay = Util.formatDay(wallpaper.day);
+    ConfigService.currentWallpaperDay = wallpaper.day.formatted;
 
     var newest = ConfigService.newestWallpaperDay;
     var newestDate = DateTime.tryParse(newest) ?? DateTime(1800);
-    newestDate = Util.normalizeDate(newestDate);
-    var current = Util.normalizeDate(wallpaper.day);
+    newestDate = newestDate.normalized;
+    var current = wallpaper.day.normalized;
 
     if (current.millisecondsSinceEpoch > newestDate.millisecondsSinceEpoch) {
-      ConfigService.newestWallpaperDay = Util.formatDay(current);
+      ConfigService.newestWallpaperDay = current.formatted;
     }
 
     if(ConfigService.saveWallpaperToGallery){
@@ -309,7 +310,7 @@ class WallpaperService {
 
   /// Tries to set the wallpaper from a given day
   static Future<void> setWallpaperOf({required DateTime day}) async {
-    day = Util.normalizeDate(day);
+    day = day.normalized;
 
     List<WallpaperInfo?> offlineWallpapers = await _getOfflineWallpapers();
     WallpaperInfo? wallpaper =
@@ -319,12 +320,12 @@ class WallpaperService {
       wallpaper = await getWallpaperFromBingByDay(day);
     } else {
       _logger
-          .d("Found image for ${Util.formatDay(day)} on the device, using it.");
+          .d("Found image for ${day.formatted} on the device, using it.");
     }
 
     if (wallpaper == null) {
       _logger
-          .e("Couldn't get matching wallpaper for day ${Util.formatDay(day)}");
+          .e("Couldn't get matching wallpaper for day ${day.formatted}");
       return;
     }
     await setWallpaper(wallpaper, ConfigService.wallpaperScreen);
@@ -332,11 +333,12 @@ class WallpaperService {
 
   /// Tries to update the wallpaper to the newest one. Fails if there is no connection and todays wallpaper isn't downloaded
   static Future<void> tryUpdateWallpaper() async {
-    var logger = getLogger();
 
+    var nowNormalized = DateTime.now().normalized;
     WallpaperInfo? todaysWallpaper =
         (await WallpaperService._getOfflineWallpapers()).firstWhereOrNull(
-            (w) => w.day == Util.normalizeDate(DateTime.now()));
+            (w) => w.day == nowNormalized);
+    _logger.d("Checking for wallpaper of ${nowNormalized.formatted}");
 
     var connectivity = await Connectivity().checkConnectivity();
 
@@ -346,25 +348,25 @@ class WallpaperService {
         ConnectivityResult.wifi,
         ConnectivityResult.ethernet
       ].contains(connectivity)) {
-        logger.d("No internet connection. Skipping...");
+        _logger.i("No internet connection. Skipping...");
         return;
       }
 
       todaysWallpaper = await WallpaperService.getLatestWallpaper();
       await todaysWallpaper.ensureDownloaded();
     } else {
-      logger.d("Using cached wallpaper today");
+      _logger.d("Using cached wallpaper today");
     }
 
     await WallpaperService.setWallpaper(
         todaysWallpaper, ConfigService.wallpaperScreen);
 
-    logger.d("Wallpaper updated!");
+    _logger.d("Wallpaper updated!");
   }
 
   /// Update the wallpaper. If todays wallpaper was never applied, it will be, else the day before current will be used
   static Future<void> updateWallpaperOnWidgetIntent() async {
-    var now = Util.normalizeDate(DateTime.now());
+    var now = DateTime.now().normalized;
     var currentWallpaperDay =
         DateTime.tryParse(ConfigService.currentWallpaperDay) ?? DateTime(1800);
     var newestWallpaperDay =
@@ -376,12 +378,12 @@ class WallpaperService {
       _logger.i("Trying to update to newest wallpaper");
       await tryUpdateWallpaper();
     } else {
-      _logger.d("Current wallpaper: ${Util.formatDay(currentWallpaperDay)}");
+      _logger.d("Current wallpaper: ${currentWallpaperDay.formatted}");
       var theDayBeforeCurrent =
           currentWallpaperDay.subtract(const Duration(days: 1));
 
       try {
-        _logger.d("Setting wallpaper for day ${Util.formatDay(theDayBeforeCurrent)}");
+        _logger.d("Setting wallpaper for day ${theDayBeforeCurrent.formatted}");
         await setWallpaperOf(day: theDayBeforeCurrent);
       } on WallpaperOutOfDateException catch (e) {
         _logger.e(e.toString());
