@@ -19,11 +19,10 @@ import 'drawer.dart';
 /// The callback dispatcher for the workmanager background isolate
 void workManagerCallbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
+    await ConfigService.ensureInitialized();
     var logger = getLogger();
-    logger.i("---- Running background task ----");
     try {
-      await ConfigService.ensureInitialized();
-
+      logger.i("---- Running background task ----");
       switch (task) {
         case consts.BG_WALLPAPER_TASK_ID:
           if (!ConfigService.dailyModeEnabled) break;
