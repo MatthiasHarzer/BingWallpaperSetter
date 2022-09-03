@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:async_wallpaper/async_wallpaper.dart';
 import 'package:bing_wallpaper_setter/consts.dart';
 import 'package:bing_wallpaper_setter/extensions/datetime.dart';
 import 'package:bing_wallpaper_setter/extensions/file.dart';
@@ -10,7 +11,6 @@ import 'package:collection/collection.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart';
-import 'package:wallpaper_manager_flutter/wallpaper_manager_flutter.dart';
 import 'package:workmanager/workmanager.dart';
 
 import '../consts.dart' as consts;
@@ -242,13 +242,11 @@ class WallpaperService {
     _logger.i("W1 Updating wallpaper to ${wallpaper.repr} on screen = $screen");
 
     // Because setting wallpaper for both screens doesn't work for some reason (tested on Huawei Mate 10 Pro)
-    if (screen == WallpaperManagerFlutter.BOTH_SCREENS) {
-      WallpaperManagerFlutter()
-          .setwallpaperfromFile(file, WallpaperManagerFlutter.HOME_SCREEN);
-      WallpaperManagerFlutter()
-          .setwallpaperfromFile(file, WallpaperManagerFlutter.LOCK_SCREEN);
+    if (screen == AsyncWallpaper.BOTH_SCREENS) {
+      await AsyncWallpaper.setWallpaperFromFile(filePath: file.path, wallpaperLocation: AsyncWallpaper.HOME_SCREEN);
+      await AsyncWallpaper.setWallpaperFromFile(filePath: file.path, wallpaperLocation: AsyncWallpaper.LOCK_SCREEN);
     } else {
-      WallpaperManagerFlutter().setwallpaperfromFile(file, screen);
+      await AsyncWallpaper.setWallpaperFromFile(filePath: file.path, wallpaperLocation: screen);
     }
 
     ConfigService.currentWallpaperDay = wallpaper.day.formatted;

@@ -15,6 +15,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.8.2"
+  async_wallpaper:
+    dependency: "direct main"
+    description:
+      name: async_wallpaper
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "2.0.0"
   boolean_selector:
     dependency: transitive
     description:
@@ -735,13 +742,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.1.2"
-  wallpaper_manager_flutter:
-    dependency: "direct main"
-    description:
-      name: wallpaper_manager_flutter
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "0.0.2"
   win32:
     dependency: transitive
     description:

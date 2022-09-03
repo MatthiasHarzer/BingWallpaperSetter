@@ -2,13 +2,13 @@
 
 import 'dart:io';
 
+import 'package:async_wallpaper/async_wallpaper.dart';
 import 'package:devicelocale/devicelocale.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path_provider_android/path_provider_android.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_android/shared_preferences_android.dart';
-import 'package:wallpaper_manager_flutter/wallpaper_manager_flutter.dart';
 
 const _WALLPAPER_SCREEN = "wallpaper_screen";
 const _DAILY_MODE_ENABLED = "daily_mode_enabled";
@@ -93,10 +93,15 @@ class ConfigService {
 
   /// Available WallpaperScreens
   static final Map<int, String> availableScreens = {
-    WallpaperManagerFlutter.HOME_SCREEN: "Homescreen",
-    WallpaperManagerFlutter.LOCK_SCREEN: "Lockscreen",
-    WallpaperManagerFlutter.BOTH_SCREENS: "Both"
+    AsyncWallpaper.HOME_SCREEN: "Homescreen",
+    AsyncWallpaper.LOCK_SCREEN: "Lockscreen",
+    AsyncWallpaper.BOTH_SCREENS: "Both"
   };
+  // static final Map<int, String> availableScreens = {
+  //   WallpaperManagerFlutter.HOME_SCREEN: "Homescreen",
+  //   WallpaperManagerFlutter.LOCK_SCREEN: "Lockscreen",
+  //   WallpaperManagerFlutter.BOTH_SCREENS: "Both"
+  // };
 
   /// Resolutions for downloading the wallpaper
   static final List<String> availableResolutions = [
