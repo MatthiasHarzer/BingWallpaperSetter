@@ -18,9 +18,11 @@ packages:
   async_wallpaper:
     dependency: "direct main"
     description:
-      name: async_wallpaper
-      url: "https://pub.dartlang.org"
-    source: hosted
+      path: "."
+      ref: main
+      resolved-ref: d763b82ebc59d50dd7e0fe8b237f01656ad2d529
+      url: "https://github.com/MatthiasHarzer/async_wallpaper.git"
+    source: git
     version: "2.0.0"
   boolean_selector:
     dependency: transitive
