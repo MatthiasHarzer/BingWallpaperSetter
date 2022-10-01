@@ -1,5 +1,7 @@
 import 'package:bing_wallpaper_setter/services/config_service.dart';
 import 'package:flutter/material.dart';
+import 'package:optimize_battery/optimize_battery.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../services/wallpaper_service.dart';
 import '../util/util.dart';
@@ -17,7 +19,39 @@ class _SettingsViewState extends State<SettingsView> {
   void _toggleDailyMode(bool enabled) async {
     ConfigService.dailyModeEnabled = enabled;
 
+    if(enabled){
+      bool ignoreBatteryOptimizationGranted =
+      await _requestIgnoreBatteryOptimization();
+
+
+      if (!ignoreBatteryOptimizationGranted && mounted) {
+        Util.showSnackBar(
+          context,
+          seconds: 30,
+          content: const Text(
+              "Battery optimization might negatively influence the behavior of the app."),
+          action: SnackBarAction(
+            label: "OPEN SETTINGS",
+            onPressed: () => OptimizeBattery.openBatteryOptimizationSettings(),
+          ),
+        );
+      }
+    }
+
     await WallpaperService.checkAndSetBackgroundTaskState();
+  }
+
+  Future<bool> _requestIgnoreBatteryOptimization() async {
+    final PermissionStatus status =
+    await Permission.ignoreBatteryOptimizations.status;
+
+    if (status != PermissionStatus.granted) {
+      if (await Permission.ignoreBatteryOptimizations.request() !=
+          PermissionStatus.granted) {
+        return false;
+      }
+    }
+    return true;
   }
 
   // Widget _buildInfoitem({required String title, required String subtitle}) {

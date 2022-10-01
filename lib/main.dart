@@ -9,7 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:workmanager/workmanager.dart';
-import 'package:optimize_battery/optimize_battery.dart';
 
 import 'consts.dart' as consts;
 import 'drawer.dart';
@@ -131,8 +130,6 @@ class _HomePageState extends State<HomePage> {
     bool storagePermissionGranted = await _requestStoragePermission();
     // bool s = await _requestExternalStoragePermission();
     // print(s);
-    bool ignoreBatteryOptimizationGranted =
-        await _requestIgnoreBatteryOptimization();
 
     if (!mounted) return;
 
@@ -145,19 +142,6 @@ class _HomePageState extends State<HomePage> {
         action: SnackBarAction(
           label: "OPEN SETTINGS",
           onPressed: () => openAppSettings(),
-        ),
-      );
-    }
-
-    if (!ignoreBatteryOptimizationGranted) {
-      Util.showSnackBar(
-        context,
-        seconds: 30,
-        content: const Text(
-            "Battery optimization might negatively influence the behavior of the app."),
-        action: SnackBarAction(
-          label: "OPEN SETTINGS",
-          onPressed: () => OptimizeBattery.openBatteryOptimizationSettings(),
         ),
       );
     }
@@ -187,18 +171,7 @@ class _HomePageState extends State<HomePage> {
     return true;
   }
 
-  Future<bool> _requestIgnoreBatteryOptimization() async {
-    final PermissionStatus status =
-        await Permission.ignoreBatteryOptimizations.status;
 
-    if (status != PermissionStatus.granted) {
-      if (await Permission.ignoreBatteryOptimizations.request() !=
-          PermissionStatus.granted) {
-        return false;
-      }
-    }
-    return true;
-  }
 
   /// Checks for wallpaper updates and sets the wallpaper variable. Returns true if updated or false if now update is present
   Future<bool> _updateWallpaper() async {
