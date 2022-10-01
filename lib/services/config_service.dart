@@ -144,6 +144,12 @@ class ConfigService {
   /// The resolution to download the wallpaper in
   static String get wallpaperResolution => _wallpaperResolution;
 
+  static double get wallpaperResolutionAsDouble{
+    final splits = _wallpaperResolution.split("x");
+    if(splits.length < 2) return 0;
+    return (double.tryParse(splits[0]) ?? 0) / (double.tryParse(splits[1]) ?? 1);
+  }
+
   static set wallpaperResolution(String resolution) {
     _prefs.setString(_WALLPAPER_RESOLUTION, resolution);
     _wallpaperResolution = resolution;
