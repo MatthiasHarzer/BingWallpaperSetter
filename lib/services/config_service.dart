@@ -145,6 +145,7 @@ class ConfigService {
   static String get wallpaperResolution => _wallpaperResolution;
 
   static double get wallpaperResolutionAsDouble{
+    if(_wallpaperResolution == "UHD") return 16/9;
     final splits = _wallpaperResolution.split("x");
     if(splits.length < 2) return 0;
     return (double.tryParse(splits[0]) ?? 0) / (double.tryParse(splits[1]) ?? 1);
