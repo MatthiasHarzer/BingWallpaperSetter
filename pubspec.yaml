@@ -15,7 +15,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-version: 1.1.9+22
+version: 1.2.2+25
 
 environment:
   sdk: ">=2.17.6 <3.0.0"
@@ -54,10 +54,11 @@ dependencies:
   connectivity_plus: ^2.3.6+1
   home_widget: ^0.1.6
   media_scanner: ^2.1.0
-  async_wallpaper:
-    git:
-      url: https://github.com/MatthiasHarzer/async_wallpaper.git
-      ref: main
+  flutter_wallpaper_manager: ^0.0.3
+#  async_wallpaper:
+#    git:
+#      url: https://github.com/MatthiasHarzer/async_wallpaper.git
+#      ref: main
 
 dev_dependencies:
   flutter_test:

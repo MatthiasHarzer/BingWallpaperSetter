@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
-import 'package:async_wallpaper/async_wallpaper.dart';
 import 'package:bing_wallpaper_setter/consts.dart';
 import 'package:bing_wallpaper_setter/extensions/datetime.dart';
 import 'package:bing_wallpaper_setter/extensions/file.dart';
@@ -10,11 +9,14 @@ import 'package:bing_wallpaper_setter/services/config_service.dart';
 import 'package:collection/collection.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_wallpaper_manager/flutter_wallpaper_manager.dart';
 import 'package:http/http.dart';
 import 'package:workmanager/workmanager.dart';
 
 import '../consts.dart' as consts;
 import '../util/util.dart';
+
+
 
 /// An exception when the given day is too far in the past and can't be fetched by the bing api.
 class WallpaperOutOfDateException implements Exception {
@@ -40,7 +42,8 @@ class WallpaperInfo {
   final String hsh;
   final DateTime day;
 
-  String get repr => "${day.formatted} @ ${ConfigService.wallpaperResolution} (hsh=$hsh)";
+
+  String get repr => "${day.formatted} @ ${ConfigService.wallpaperResolution} (file=${file.path})";
 
   String get mobileUrl =>
       "$_bingEndpoint${urlBase}_${ConfigService.wallpaperResolution}.jpg";
@@ -108,7 +111,6 @@ class WallpaperInfo {
 class WallpaperService {
   static const platform = MethodChannel('dev.taptwice.bing_wallpaper_app/pictures');
   static const _maxWallpapers = 50;
-
 
   /// Deletes old wallpapers
   static void ensureMaxCacheWallpapers() async {
@@ -239,14 +241,18 @@ class WallpaperService {
 
     File file = wallpaper.file;
 
+
     _logger.i("W1 Updating wallpaper to ${wallpaper.repr} on screen = $screen");
 
     // Because setting wallpaper for both screens doesn't work for some reason (tested on Huawei Mate 10 Pro)
-    if (screen == AsyncWallpaper.BOTH_SCREENS) {
-      await AsyncWallpaper.setWallpaperFromFile(filePath: file.path, wallpaperLocation: AsyncWallpaper.HOME_SCREEN);
-      await AsyncWallpaper.setWallpaperFromFile(filePath: file.path, wallpaperLocation: AsyncWallpaper.LOCK_SCREEN);
+
+    if (screen == WallpaperManager.BOTH_SCREEN){
+      await Future.wait([
+        WallpaperManager.setWallpaperFromFile(file.path, WallpaperManager.HOME_SCREEN),
+        WallpaperManager.setWallpaperFromFile(file.path, WallpaperManager.LOCK_SCREEN)
+      ]);
     } else {
-      await AsyncWallpaper.setWallpaperFromFile(filePath: file.path, wallpaperLocation: screen);
+      await WallpaperManager.setWallpaperFromFile(file.path, screen);
     }
 
     ConfigService.currentWallpaperDay = wallpaper.day.formatted;
@@ -268,6 +274,8 @@ class WallpaperService {
 
     // await WallpaperManager.setWallpaperFromFile(file, screen);
   }
+
+
 
   /// Stops the background wallpaper update task
   static Future<void> _stopBackgroundTask() async {

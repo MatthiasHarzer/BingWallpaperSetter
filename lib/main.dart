@@ -14,7 +14,6 @@ import 'consts.dart' as consts;
 import 'drawer.dart';
 
 
-
 /// The callback dispatcher for the workmanager background isolate
 void workManagerCallbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {

@@ -2,8 +2,8 @@
 
 import 'dart:io';
 
-import 'package:async_wallpaper/async_wallpaper.dart';
 import 'package:devicelocale/devicelocale.dart';
+import 'package:flutter_wallpaper_manager/flutter_wallpaper_manager.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path_provider_android/path_provider_android.dart';
@@ -93,9 +93,9 @@ class ConfigService {
 
   /// Available WallpaperScreens
   static final Map<int, String> availableScreens = {
-    AsyncWallpaper.HOME_SCREEN: "Homescreen",
-    AsyncWallpaper.LOCK_SCREEN: "Lockscreen",
-    AsyncWallpaper.BOTH_SCREENS: "Both"
+    WallpaperManager.HOME_SCREEN: "Homescreen",
+    WallpaperManager.LOCK_SCREEN: "Lockscreen",
+    WallpaperManager.BOTH_SCREEN: "Both"
   };
   // static final Map<int, String> availableScreens = {
   //   WallpaperManagerFlutter.HOME_SCREEN: "Homescreen",

@@ -15,15 +15,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.9.0"
-  async_wallpaper:
-    dependency: "direct main"
-    description:
-      path: "."
-      ref: main
-      resolved-ref: d763b82ebc59d50dd7e0fe8b237f01656ad2d529
-      url: "https://github.com/MatthiasHarzer/async_wallpaper.git"
-    source: git
-    version: "2.0.0"
   boolean_selector:
     dependency: transitive
     description:
@@ -202,6 +193,13 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_wallpaper_manager:
+    dependency: "direct main"
+    description:
+      name: flutter_wallpaper_manager
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.0.3"
   flutter_web_plugins:
     dependency: transitive
     description: flutter
