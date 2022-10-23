@@ -39,6 +39,11 @@ class _SettingsViewState extends State<SettingsView> {
     }
 
     await WallpaperService.checkAndSetBackgroundTaskState();
+
+    /// Update the wallpaper instant
+    if(enabled){
+      await WallpaperService.updateWallpaperOnBackgroundTaskIntent();
+    }
   }
 
   Future<bool> _requestIgnoreBatteryOptimization() async {
