@@ -40,18 +40,19 @@ class WallpaperInfo {
   final String copyrightLink;
   final String title;
   final String hsh;
+  final String resolution;
   final DateTime day;
 
 
-  String get repr => "${day.formatted} @ ${ConfigService.wallpaperResolution} (file=${file.path})";
+  String get repr => "${day.formatted} @ $resolution (file=${file.path})";
 
   String get mobileUrl =>
-      "$_bingEndpoint${urlBase}_${ConfigService.wallpaperResolution}.jpg";
+      "$_bingEndpoint${urlBase}_$resolution.jpg";
 
   String get fullSizeUrl => "$_bingEndpoint${urlBase}_UHD.jpg";
 
   String get id =>
-      "${day.formatted}_${hsh}_${ConfigService.wallpaperResolution}";
+      "${day.formatted}_${hsh}_$resolution";
 
 
   /// The file where the wallpaper image is saved on the device
@@ -66,6 +67,7 @@ class WallpaperInfo {
     this.copyrightLink = "",
     required this.day,
     required this.hsh,
+    required this.resolution,
   });
 
 
@@ -122,7 +124,7 @@ class WallpaperService {
 
     var walls = existing
         .where((f) => f.date != null && f.hsh != null)
-        .map((f) => WallpaperInfo(day: f.date!, hsh: f.hsh!))
+        .map((f) => WallpaperInfo(day: f.date!, hsh: f.hsh!, resolution: f.resolution!))
         .toList();
     walls.sort((a, b) => b.day.compareTo(a.day)); // descending order
 
@@ -210,7 +212,9 @@ class WallpaperService {
         copyright: data["copyright"],
         copyrightLink: data["copyrightlink"],
         day: DateTime.parse(data["enddate"]),
-        hsh: data["hsh"]));
+        hsh: data["hsh"],
+        resolution: ConfigService.wallpaperResolution
+    ));
   }
 
   /// Returns as much wallpapers as possible
@@ -307,13 +311,14 @@ class WallpaperService {
     }
   }
 
-  /// Returns a list of WallpaperInfo's with the downloaded (on-device) wallpapers
+  /// Returns a list of WallpaperInfo's with the downloaded (on-device) wallpapers.
+  /// Takes wallpaper resolution into account and returning only wallpaper which match the [ConfigService.wallpaperResolution]
   static Future<List<WallpaperInfo>> _getOfflineWallpapers() async {
     var dir = ConfigService.wallpaperCacheDir;
     var existing = await Util.listDir(dir);
     var walls = existing
-        .where((f) => f.date != null && f.hsh != null)
-        .map((f) => WallpaperInfo(day: f.date!, hsh: f.hsh!))
+        .where((f) => f.date != null && f.hsh != null && f.resolution == ConfigService.wallpaperResolution)
+        .map((f) => WallpaperInfo(day: f.date!, hsh: f.hsh!, resolution: f.resolution!))
         .toList();
     walls.sort((a, b) => b.day.compareTo(a.day)); // descending order
     return walls;
@@ -348,7 +353,7 @@ class WallpaperService {
     var nowNormalized = DateTime.now().normalized;
     WallpaperInfo? todaysWallpaper =
         (await WallpaperService._getOfflineWallpapers()).firstWhereOrNull(
-            (w) => w.day == nowNormalized);
+            (w) => w.day == nowNormalized && w.resolution == ConfigService.wallpaperResolution);
 
     _logger.i("Trying to update to newest wallpaper (${nowNormalized.formatted})");
     // _logger.d("Checking for wallpaper of day ${nowNormalized.formatted}");
