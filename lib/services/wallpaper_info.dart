@@ -27,6 +27,8 @@ class WallpaperInfo {
 
   String get id => "${day.formatted}_${hsh}_$resolution";
 
+  String get formattedFileName => "${title.replaceAll(" ", "_")}_${day.formatted}_$resolution";
+
   /// The file where the wallpaper image is saved on the device
   File get file => _getFile();
 

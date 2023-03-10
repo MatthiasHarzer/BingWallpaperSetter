@@ -30,10 +30,15 @@ class Util {
     return file.uri.path;
   }
 
-  /// Copies a file [from] a file [to] a directory. Returns the new file, or null if an error occurred
+  /// Copies a file [from] a file [to] a directory.
+  /// If [targetName] (w\o extension) is given, the file will be renamed to that name.
+  /// Returns the new file, or null if an error occurred.
   static Future<File?> copyFile(
-      {required File from, required Directory to}) async {
-    String path = "${to.path}/${from.name}";
+      {required File from, required Directory to, String? targetName}) async {
+    String name =
+        targetName != null ? "$targetName.${from.ending}" : from.name;
+
+    String path = "${to.path}/$name";
     try {
       await from.copy(path);
     } catch (e) {

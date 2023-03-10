@@ -2,6 +2,7 @@
 
 import 'dart:io';
 
+import '../consts.dart' as consts;
 import 'package:devicelocale/devicelocale.dart';
 import 'package:flutter_wallpaper_manager/flutter_wallpaper_manager.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -19,6 +20,7 @@ const _CURRENT_WALLPAPER_DAY = "current_wallpaper_day";
 const _NEWEST_WALLPAPER_DAY = "newest_wallpaper_day";
 const _SAVE_WALLPAPER_TO_GALLERY = "save_wallpaper_to_gallery";
 const _SHOW_DEBUG_VALUES = "show_debug_values";
+const _GALLERY_DIR = "gallery_dir";
 
 /// Provides key-val-storage like functionalities with device storage and configurations
 class ConfigService {
@@ -35,6 +37,7 @@ class ConfigService {
   static late String _newestWallpaperDay;
   static late bool _saveWallpaperToGallery;
   static late bool _showDebugValues;
+  static late String _galleryDir;
 
   /// A private directory to store data in. Not visible in the filesystem
   static late Directory localDirectory;
@@ -79,6 +82,8 @@ class ConfigService {
         _prefs.getBool(_SAVE_WALLPAPER_TO_GALLERY) ?? false;
     _showDebugValues = _prefs.getBool(_SHOW_DEBUG_VALUES) ?? false;
 
+    _galleryDir = _prefs.getString(_GALLERY_DIR) ?? consts.DEFAULT_GALLERY_DIR;
+
     _packageInfo = await PackageInfo.fromPlatform();
     localDirectory = await getApplicationDocumentsDirectory();
     publicDirectory =
@@ -91,9 +96,7 @@ class ConfigService {
   }
 
   /// The directory to store wallpaper in gallery
-  static Directory get galleryDir {
-    return Directory("/storage/emulated/0/Pictures/Bing Wallpapers");
-  }
+  static Directory get galleryDir => Directory(_galleryDir);
 
   static PackageInfo get packageInfo => _packageInfo;
 
@@ -214,4 +217,10 @@ class ConfigService {
     _prefs.setBool(_SHOW_DEBUG_VALUES, enabled);
     _showDebugValues = enabled;
   }
+
+  /// The directory to store wallpaper in gallery
+  static set galleryDir(Directory dir) => {
+        _prefs.setString(_GALLERY_DIR, dir.path),
+        _galleryDir = dir.path,
+      };
 }

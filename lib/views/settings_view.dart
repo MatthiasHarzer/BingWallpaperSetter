@@ -1,9 +1,13 @@
+import 'dart:io';
+
 import 'package:bing_wallpaper_setter/extensions/datetime.dart';
 import 'package:bing_wallpaper_setter/services/background_service.dart';
 import 'package:bing_wallpaper_setter/services/config_service.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:optimize_battery/optimize_battery.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../consts.dart' as consts;
 
 import '../services/wallpaper_service.dart';
 import '../util/util.dart';
@@ -157,6 +161,49 @@ class _SettingsViewState extends State<SettingsView> {
     );
   }
 
+  /// Builds a directory select option
+  Widget _buildDirectorySelect({
+    required String title,
+    required String directory,
+    required Function(String) onChanged,
+    String? defaultDirectory,
+  }) {
+    return ListTile(
+      title: Text(title),
+      subtitle: Text(directory),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            onPressed: () async {
+              final String? newDirectory =
+                  await FilePicker.platform.getDirectoryPath();
+              if (newDirectory != null) {
+                onChanged(newDirectory);
+              }
+            },
+            icon: const Icon(Icons.folder),
+            tooltip: "Select directory",
+            color: Colors.grey[300],
+            splashRadius: 25,
+          ),
+          Visibility(
+            visible: defaultDirectory != null && defaultDirectory != directory,
+            child: IconButton(
+              onPressed: () {
+                onChanged(defaultDirectory!);
+              },
+              icon: const Icon(Icons.restore),
+              tooltip: "Restore default directory",
+              color: Colors.red[500],
+              splashRadius: 25,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// Builds a header for a group of options
   Widget _buildHeader({required String text}) {
     return ListTile(
@@ -222,6 +269,14 @@ class _SettingsViewState extends State<SettingsView> {
                 value: ConfigService.saveWallpaperToGallery,
                 onChanged: (v) => setState(() {
                   ConfigService.saveWallpaperToGallery = v;
+                }),
+              ),
+              _buildDirectorySelect(
+                title: "Gallery Directory",
+                directory: ConfigService.galleryDir.path,
+                defaultDirectory: consts.DEFAULT_GALLERY_DIR,
+                onChanged: (v) => setState(() {
+                  ConfigService.galleryDir = Directory(v);
                 }),
               ),
             ],

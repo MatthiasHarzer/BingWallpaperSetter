@@ -63,9 +63,10 @@ class WallpaperService {
     // _logger.d("Saving ${file.name} to gallery");
 
     var directory = ConfigService.galleryDir;
-    await directory.create();
+    await directory.create(recursive: true);
 
-    File? galleryFile = await Util.copyFile(from: file, to: directory);
+    File? galleryFile = await Util.copyFile(
+        from: file, to: directory, targetName: wallpaper.formattedFileName);
 
     bool success = galleryFile != null;
 

@@ -10,6 +10,8 @@ extension CustomFile on FileSystemEntity {
 
   String get nameWithoutEnding => name.split(".").first;
 
+  String get ending => name.split(".").last;
+
   String? get stringDate => nameWithoutEnding.split("_").tryGet(1);
 
   DateTime? get date => DateTime.tryParse(stringDate.toString());

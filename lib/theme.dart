@@ -45,7 +45,7 @@ final _appTheme = ThemeData(
 
 final appTheme = _appTheme.copyWith(
   textTheme: _appTheme.textTheme.apply(
-    bodyColor: Colors.grey[200],
+    bodyColor: Colors.grey[100],
 
     // displayColor: Colors.black
   ),

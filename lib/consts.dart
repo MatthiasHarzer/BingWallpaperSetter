@@ -12,4 +12,6 @@ const BG_TASK_RECURRING_TIMEOUT = 1.5; //h
 const BG_TASK_FREQUENCY = Duration(hours: 24);
 const WIDGET_HOST = "updatewallpaper";
 
+const DEFAULT_GALLERY_DIR = "/storage/emulated/0/Pictures/Bing Wallpapers";
+
 final WALLPAPER_REGEX = RegExp("wallpaper_\d{4}\.jpg", caseSensitive: false);
