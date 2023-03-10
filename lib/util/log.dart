@@ -1,9 +1,9 @@
 import 'dart:io';
 
+import 'package:better_open_file/better_open_file.dart';
 import 'package:bing_wallpaper_setter/consts.dart' as consts;
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
-import 'package:open_file/open_file.dart';
 
 import '../services/config_service.dart';
 
@@ -88,13 +88,13 @@ Future<void> checkLogFileSize() async {
 
 /// Opens the log file in the explorer
 Future<void> openLogFile() async {
-  String path = ConfigService.publicDirectory.path;
+  File file = ConfigService.logFile;
 
-  if (!(await File("$path/log.txt").exists())) {
+  if (!file.existsSync()) {
     await _logToFile("This is the beginning of the log file.");
   }
 
-  await OpenFile.open("$path/log.txt");
+  await OpenFile.open(file.path);
 }
 
 Logger getLogger() {
