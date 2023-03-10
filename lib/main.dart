@@ -2,6 +2,7 @@ import 'package:bing_wallpaper_setter/services/background_service.dart';
 import 'package:bing_wallpaper_setter/services/config_service.dart';
 import 'package:bing_wallpaper_setter/services/wallpaper_info.dart';
 import 'package:bing_wallpaper_setter/services/wallpaper_service.dart';
+import 'package:bing_wallpaper_setter/theme.dart';
 import 'package:bing_wallpaper_setter/util/log.dart';
 import 'package:bing_wallpaper_setter/util/util.dart';
 import 'package:bing_wallpaper_setter/views/about_view.dart';
@@ -42,25 +43,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Bing Daily Wallpaper',
-      theme: ThemeData(
-        switchTheme: SwitchThemeData(
-          thumbColor: MaterialStateProperty.resolveWith((states) =>
-              states.contains(MaterialState.selected)
-                  ? Colors.deepPurpleAccent
-                  : null),
-          trackColor: MaterialStateProperty.resolveWith((states) =>
-              states.contains(MaterialState.selected)
-                  ? Colors.deepPurple[500]
-                  : null),
-        ),
-        snackBarTheme: SnackBarThemeData(
-          backgroundColor: Colors.grey.shade900,
-          contentTextStyle: const TextStyle(color: Colors.white),
-          actionTextColor: Colors.deepPurpleAccent,
-        ),
-        primarySwatch: Colors.deepPurple,
-        brightness: Brightness.dark,
-      ),
+      theme: appTheme,
       home: const HomePage(),
     );
   }

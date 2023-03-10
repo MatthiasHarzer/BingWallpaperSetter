@@ -46,8 +46,11 @@ class ConfigService {
   /// The directory to store wallpapers in
   static Directory get wallpaperCacheDir => publicDirectory;
 
+  /// The directory where the log file is stored
+  static Directory get logDir => publicDirectory;
+
   /// The file to store logs in
-  static File get logFile => File("${publicDirectory.path}/log.txt");
+  static File get logFile => File("${logDir.path}/log.txt");
 
   static Future<void> ensureInitialized() async {
     if (Platform.isAndroid) {
