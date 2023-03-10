@@ -52,7 +52,7 @@ dependencies:
   optimize_battery: ^0.0.4
   intl: ^0.17.0
   connectivity_plus: ^2.3.6+1
-  home_widget: ^0.1.6
+  home_widget: ^0.2.0+1
   media_scanner: ^2.1.0
   flutter_wallpaper_manager: ^0.0.3
 #  async_wallpaper:

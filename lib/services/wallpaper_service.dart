@@ -6,112 +6,23 @@ import 'package:bing_wallpaper_setter/consts.dart';
 import 'package:bing_wallpaper_setter/extensions/datetime.dart';
 import 'package:bing_wallpaper_setter/extensions/file.dart';
 import 'package:bing_wallpaper_setter/services/config_service.dart';
+import 'package:bing_wallpaper_setter/services/wallpaper_info.dart';
 import 'package:collection/collection.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_wallpaper_manager/flutter_wallpaper_manager.dart';
 import 'package:http/http.dart';
-import 'package:workmanager/workmanager.dart';
 
 import '../consts.dart' as consts;
+import '../exeptions/wallpaper_out_of_date_exception.dart';
+import '../util/log.dart';
 import '../util/util.dart';
 
-
-
-/// An exception when the given day is too far in the past and can't be fetched by the bing api.
-class WallpaperOutOfDateException implements Exception {
-  late DateTime day;
-
-  WallpaperOutOfDateException(this.day);
-
-  @override
-  String toString() {
-    return "${day.formatted} is too far in the past and can't be fetched.";
-  }
-}
 final _logger = getLogger();
 
-class WallpaperInfo {
-
-  final String _bingEndpoint = "https://bing.com";
-
-  final String urlBase;
-  final String copyright;
-  final String copyrightLink;
-  final String title;
-  final String hsh;
-  final String resolution;
-  final DateTime day;
-
-
-  String get repr => "${day.formatted} @ $resolution (file=${file.path})";
-
-  String get mobileUrl =>
-      "$_bingEndpoint${urlBase}_$resolution.jpg";
-
-  String get fullSizeUrl => "$_bingEndpoint${urlBase}_UHD.jpg";
-
-  String get id =>
-      "${day.formatted}_${hsh}_$resolution";
-
-
-  /// The file where the wallpaper image is saved on the device
-  File get file => _getFile();
-
-  Future<bool> get isDownloaded async => file.exists();
-
-  WallpaperInfo({
-    this.urlBase = "" ,
-    this.title = "",
-    this.copyright = "",
-    this.copyrightLink = "",
-    required this.day,
-    required this.hsh,
-    required this.resolution,
-  });
-
-
-
-  @override
-  bool operator ==(other) {
-    if (other is! WallpaperInfo) {
-      return false;
-    }
-    return id == other.id;
-  }
-
-  int? _hashCode;
-
-  @override
-  int get hashCode {
-    _hashCode ??= id.hashCode;
-    return _hashCode!;
-  }
-
-  @override
-  String toString() {
-    return "WallpaperInfo(id=$id, title=$title, mobileUrl=$mobileUrl)";
-  }
-
-  File _getFile(){
-    var dir = ConfigService.wallpaperCacheDir;
-    String name = "wallpaper_$id.jpg";
-    return File("${dir.path}/$name");
-  }
-
-  /// Checks if the wallpaper is downloaded and downloads it if necessary
-  Future<void> ensureDownloaded() async {
-    if (await isDownloaded) {
-      _logger.d("$mobileUrl already downloaded");
-      return;
-    }
-    _logger.i("Downloading $mobileUrl");
-    await Util.downloadWallpaper(this);
-  }
-}
-
 class WallpaperService {
-  static const platform = MethodChannel('dev.taptwice.bing_wallpaper_app/pictures');
+  static const platform =
+      MethodChannel('dev.taptwice.bing_wallpaper_app/pictures');
   static const _maxWallpapers = 50;
 
   /// Deletes old wallpapers
@@ -124,7 +35,8 @@ class WallpaperService {
 
     var walls = existing
         .where((f) => f.date != null && f.hsh != null)
-        .map((f) => WallpaperInfo(day: f.date!, hsh: f.hsh!, resolution: f.resolution!))
+        .map((f) =>
+            WallpaperInfo(day: f.date!, hsh: f.hsh!, resolution: f.resolution!))
         .toList();
     walls.sort((a, b) => b.day.compareTo(a.day)); // descending order
 
@@ -144,7 +56,7 @@ class WallpaperService {
   }
 
   ///Saves the given [wallpaper] to the gallery on the device
-  static Future<bool> saveToGallery(WallpaperInfo wallpaper)async{
+  static Future<bool> saveToGallery(WallpaperInfo wallpaper) async {
     await wallpaper.ensureDownloaded();
     File file = wallpaper.file;
 
@@ -157,7 +69,7 @@ class WallpaperService {
 
     bool success = galleryFile != null;
 
-    if(success){
+    if (success) {
       _logger.i("Saved ${file.name} to gallery ${directory.path}");
 
       DateTime day = wallpaper.day.add(const Duration(hours: 6));
@@ -165,7 +77,6 @@ class WallpaperService {
     }
     return success;
   }
-
 
   /// Gets a wallpaper for the given [day]. Returns [null] if the wallpaper couldn't be fetched.
   /// Throws a [WallpaperOutOfDateException] when the day is too far in the past.
@@ -189,7 +100,7 @@ class WallpaperService {
   /// Makes a signle request to the bing endpoint an returns the fetched wallpapers.
   static Future<Iterable<WallpaperInfo>> _getWallpapersFromBing(
       {required String local, required int n, int idx = 0}) async {
-    if(local == "auto"){
+    if (local == "auto") {
       local = ConfigService.autoRegionLocale;
     }
     String url = "$BASE_URL&mkt=$local&n=$n&idx=$idx";
@@ -213,8 +124,7 @@ class WallpaperService {
         copyrightLink: data["copyrightlink"],
         day: DateTime.parse(data["enddate"]),
         hsh: data["hsh"],
-        resolution: ConfigService.wallpaperResolution
-    ));
+        resolution: ConfigService.wallpaperResolution));
   }
 
   /// Returns as much wallpapers as possible
@@ -245,15 +155,16 @@ class WallpaperService {
 
     File file = wallpaper.file;
 
-
     _logger.i("W1 Updating wallpaper to ${wallpaper.repr} on screen = $screen");
 
     // Because setting wallpaper for both screens doesn't work for some reason (tested on Huawei Mate 10 Pro)
 
-    if (screen == WallpaperManager.BOTH_SCREEN){
+    if (screen == WallpaperManager.BOTH_SCREEN) {
       await Future.wait([
-        WallpaperManager.setWallpaperFromFile(file.path, WallpaperManager.HOME_SCREEN),
-        WallpaperManager.setWallpaperFromFile(file.path, WallpaperManager.LOCK_SCREEN)
+        WallpaperManager.setWallpaperFromFile(
+            file.path, WallpaperManager.HOME_SCREEN),
+        WallpaperManager.setWallpaperFromFile(
+            file.path, WallpaperManager.LOCK_SCREEN)
       ]);
     } else {
       await WallpaperManager.setWallpaperFromFile(file.path, screen);
@@ -270,7 +181,7 @@ class WallpaperService {
       ConfigService.newestWallpaperDay = current.formatted;
     }
 
-    if(ConfigService.saveWallpaperToGallery){
+    if (ConfigService.saveWallpaperToGallery) {
       await saveToGallery(wallpaper);
     }
 
@@ -279,46 +190,18 @@ class WallpaperService {
     // await WallpaperManager.setWallpaperFromFile(file, screen);
   }
 
-
-
-  /// Stops the background wallpaper update task
-  static Future<void> _stopBackgroundTask() async {
-    await Workmanager().cancelByTag(consts.BG_WALLPAPER_TASK_ID);
-    _logger.i("Stopped background task");
-  }
-
-  /// Starts the background wallpaper update task
-  static Future<void> _startBackgroundTask() async {
-    await Workmanager().registerPeriodicTask(
-      consts.BG_WALLPAPER_TASK_ID,
-      consts.BG_WALLPAPER_TASK_ID,
-      // constraints: Constraints(networkType: NetworkType.connected),
-      frequency: const Duration(hours: consts.BG_TASK_RECURRING_TIME),
-      backoffPolicy: BackoffPolicy.linear,
-      tag: consts.BG_WALLPAPER_TASK_ID,
-    );
-    _logger.i("Started background task");
-  }
-
-  /// Checks if a background task should run and starts or stops it if necessary
-  static Future<void> checkAndSetBackgroundTaskState() async {
-    bool enabled = ConfigService.dailyModeEnabled;
-
-    await _stopBackgroundTask();
-    if (enabled) {
-      // await _stopBackgroundTask();
-      await _startBackgroundTask();
-    }
-  }
-
   /// Returns a list of WallpaperInfo's with the downloaded (on-device) wallpapers.
   /// Takes wallpaper resolution into account and returning only wallpaper which match the [ConfigService.wallpaperResolution]
   static Future<List<WallpaperInfo>> _getOfflineWallpapers() async {
     var dir = ConfigService.wallpaperCacheDir;
     var existing = await Util.listDir(dir);
     var walls = existing
-        .where((f) => f.date != null && f.hsh != null && f.resolution == ConfigService.wallpaperResolution)
-        .map((f) => WallpaperInfo(day: f.date!, hsh: f.hsh!, resolution: f.resolution!))
+        .where((f) =>
+            f.date != null &&
+            f.hsh != null &&
+            f.resolution == ConfigService.wallpaperResolution)
+        .map((f) =>
+            WallpaperInfo(day: f.date!, hsh: f.hsh!, resolution: f.resolution!))
         .toList();
     walls.sort((a, b) => b.day.compareTo(a.day)); // descending order
     return walls;
@@ -335,13 +218,11 @@ class WallpaperService {
     if (wallpaper == null) {
       wallpaper = await getWallpaperFromBingByDay(day);
     } else {
-      _logger
-          .d("Found image for ${day.formatted} on the device, using it.");
+      _logger.d("Found image for ${day.formatted} on the device, using it.");
     }
 
     if (wallpaper == null) {
-      _logger
-          .e("Couldn't get matching wallpaper for day ${day.formatted}");
+      _logger.e("Couldn't get matching wallpaper for day ${day.formatted}");
       return;
     }
     await setWallpaper(wallpaper, ConfigService.wallpaperScreen);
@@ -349,16 +230,15 @@ class WallpaperService {
 
   /// Tries to update the wallpaper to the newest one. Fails if there is no connection and todays wallpaper isn't downloaded
   static Future<void> _tryUpdateWallpaper() async {
-
     var nowNormalized = DateTime.now().normalized;
     WallpaperInfo? todaysWallpaper =
-        (await WallpaperService._getOfflineWallpapers()).firstWhereOrNull(
-            (w) => w.day == nowNormalized && w.resolution == ConfigService.wallpaperResolution);
+        (await WallpaperService._getOfflineWallpapers()).firstWhereOrNull((w) =>
+            w.day == nowNormalized &&
+            w.resolution == ConfigService.wallpaperResolution);
 
-    _logger.i("Trying to update to newest wallpaper (${nowNormalized.formatted})");
+    _logger
+        .i("Trying to update to newest wallpaper (${nowNormalized.formatted})");
     // _logger.d("Checking for wallpaper of day ${nowNormalized.formatted}");
-
-
 
     if (todaysWallpaper == null) {
       var connectivity = await Connectivity().checkConnectivity();
@@ -403,19 +283,19 @@ class WallpaperService {
       } on WallpaperOutOfDateException catch (e) {
         _logger.e(e.toString());
         await _tryUpdateWallpaper();
-      }catch(e){
+      } catch (e) {
         _logger.e("An error occurred: $e");
       }
     }
   }
 
   /// Updates the wallpaper to the newest, if it was never applied. Else nothing
-  static Future<void> updateWallpaperOnBackgroundTaskIntent() async{
+  static Future<void> updateWallpaperOnBackgroundTaskIntent() async {
     var today = DateTime.now().normalized;
     var newestWallpaperDay =
         DateTime.tryParse(ConfigService.newestWallpaperDay) ?? DateTime(1800);
 
-    if(newestWallpaperDay == today){
+    if (newestWallpaperDay == today) {
       // Newest wallpaper was applied today -> don't update wallpaper
       _logger.d("Newest wallpaper has already been set today -> skipping....");
       return;

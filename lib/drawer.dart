@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart';
 
 class MainPageDrawer extends StatelessWidget {
   final String header;
   final VoidCallback? onSettingsTap;
   final VoidCallback? onAboutTap;
-  final VoidCallback? onOldWallpapersTab;
+  final VoidCallback? onWallpaperHistoryTab;
 
   MainPageDrawer(
       {Key? key,
       this.header = "Bing Wallpaper",
       this.onSettingsTap,
       this.onAboutTap,
-      this.onOldWallpapersTab})
+      this.onWallpaperHistoryTab})
       : super(key: key);
 
   final TextStyle itemTextStyle = TextStyle(
@@ -72,7 +71,7 @@ class MainPageDrawer extends StatelessWidget {
             _buildItem(
               icon: Icons.history,
               text: "Wallpaper History",
-              onTap: onOldWallpapersTab,
+              onTap: onWallpaperHistoryTab,
             ),
             _buildItem(
               icon: Icons.settings,

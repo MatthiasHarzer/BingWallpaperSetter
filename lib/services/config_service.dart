@@ -44,7 +44,10 @@ class ConfigService {
   static late Directory publicDirectory;
 
   /// The directory to store wallpapers in
-  static late Directory wallpaperCacheDir;
+  static Directory get wallpaperCacheDir => publicDirectory;
+
+  /// The file to store logs in
+  static File get logFile => File("${publicDirectory.path}/log.txt");
 
   static Future<void> ensureInitialized() async {
     if (Platform.isAndroid) {
@@ -69,20 +72,20 @@ class ConfigService {
     _bgWallpaperTaskLastRun = _prefs.getInt(_BG_WALLPAPER_TASK_LAST_RUN) ?? 0;
     _currentWallpaperDay = _prefs.getString(_CURRENT_WALLPAPER_DAY) ?? "";
     _newestWallpaperDay = _prefs.getString(_NEWEST_WALLPAPER_DAY) ?? "";
-    _saveWallpaperToGallery = _prefs.getBool(_SAVE_WALLPAPER_TO_GALLERY) ?? false;
+    _saveWallpaperToGallery =
+        _prefs.getBool(_SAVE_WALLPAPER_TO_GALLERY) ?? false;
     _showDebugValues = _prefs.getBool(_SHOW_DEBUG_VALUES) ?? false;
 
     _packageInfo = await PackageInfo.fromPlatform();
     localDirectory = await getApplicationDocumentsDirectory();
-    publicDirectory = (await getExternalStorageDirectory())!; // Requires android platform
-    wallpaperCacheDir = publicDirectory;
+    publicDirectory =
+        (await getExternalStorageDirectory())!; // Requires android platform
   }
 
-  static Future<void> reload() async{
+  static Future<void> reload() async {
     await _prefs.reload();
     await _load();
   }
-
 
   /// The directory to store wallpaper in gallery
   static Directory get galleryDir {
@@ -97,6 +100,7 @@ class ConfigService {
     WallpaperManager.LOCK_SCREEN: "Lockscreen",
     WallpaperManager.BOTH_SCREEN: "Both"
   };
+
   // static final Map<int, String> availableScreens = {
   //   WallpaperManagerFlutter.HOME_SCREEN: "Homescreen",
   //   WallpaperManagerFlutter.LOCK_SCREEN: "Lockscreen",
@@ -144,11 +148,12 @@ class ConfigService {
   /// The resolution to download the wallpaper in
   static String get wallpaperResolution => _wallpaperResolution;
 
-  static double get wallpaperResolutionAsDouble{
-    if(_wallpaperResolution == "UHD") return 16/9;
+  static double get wallpaperResolutionAsDouble {
+    if (_wallpaperResolution == "UHD") return 16 / 9;
     final splits = _wallpaperResolution.split("x");
-    if(splits.length < 2) return 0;
-    return (double.tryParse(splits[0]) ?? 0) / (double.tryParse(splits[1]) ?? 1);
+    if (splits.length < 2) return 0;
+    return (double.tryParse(splits[0]) ?? 0) /
+        (double.tryParse(splits[1]) ?? 1);
   }
 
   static set wallpaperResolution(String resolution) {
@@ -159,14 +164,13 @@ class ConfigService {
   /// The regions wallpaper locale
   static String get region => _region;
 
-  static set region(String r){
+  static set region(String r) {
     _prefs.setString(_REGION, r);
     _region = r;
   }
 
   /// The regions locale defined by the device locale
   static String get autoRegionLocale => _autoRegionLocale;
-
 
   /// The day of the last applied wallpaper
   static String get currentWallpaperDay => _currentWallpaperDay;

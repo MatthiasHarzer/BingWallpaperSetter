@@ -1,72 +1,16 @@
 import 'dart:io';
 
-import 'package:bing_wallpaper_setter/consts.dart' as consts;
+import 'package:bing_wallpaper_setter/extensions/datetime.dart';
 import 'package:bing_wallpaper_setter/extensions/file.dart';
 import 'package:bing_wallpaper_setter/services/config_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:logger/logger.dart';
 import 'package:media_scanner/media_scanner.dart';
-import 'package:open_file/open_file.dart';
 import 'package:url_launcher/url_launcher.dart' as web;
 
-import '../services/wallpaper_service.dart';
-
-/// Uses [Util.logToFile] to log all events
-class FileLogOutput extends LogOutput {
-  @override
-  void output(OutputEvent event){
-    var ansiColorString = PrettyPrinter.levelColors[event.level].toString();
-    for (var line in event.lines) {
-      String cleanedLine = line.replaceAll(ansiColorString, ""); // Remove ansi color string before writing to file
-      Util.logToFileSync(cleanedLine);
-    }
-  }
-}
-
-/// Add-on to [PrettyPrinter]. Adds [<LevelName>] in front of log messages
-class BetterPrettyPrinter extends PrettyPrinter {
-  BetterPrettyPrinter({
-    int stackTraceBeginIndex = 0,
-    int methodCount = 2,
-    int errorMethodCount = 8,
-    int lineLength = 120,
-    bool colors = true,
-    bool printEmojis = true,
-    bool printTime = false,
-    Map<Level, bool> excludeBox = const {},
-    bool noBoxingByDefault = true,
-  }) : super(
-            colors: colors,
-            stackTraceBeginIndex: stackTraceBeginIndex,
-            printEmojis: printEmojis,
-            printTime: printTime,
-            methodCount: methodCount,
-            noBoxingByDefault: noBoxingByDefault,
-            errorMethodCount: errorMethodCount,
-            excludeBox: excludeBox,
-            lineLength: lineLength);
-
-  @override
-  List<String> log(LogEvent event) {
-    List<String> retval = super.log(event);
-    return retval.map((r)=>"[${event.level.name.toUpperCase()}] $r").toList();
-  }
-}
-
-Logger getLogger() {
-  return Logger(
-    printer: BetterPrettyPrinter(
-        colors: true,
-        noBoxingByDefault: true,
-        methodCount: 0,
-        printEmojis: false),
-    level: Level.debug,
-    output: MultiOutput([FileLogOutput(), ConsoleOutput()]),
-    filter: ProductionFilter(), // For now
-  );
-}
+import '../services/wallpaper_info.dart';
+import 'log.dart';
 
 class Util {
   /// Downloads a file from an [url] to a given [directory]. Returns the files path.
@@ -102,64 +46,13 @@ class Util {
 
   static Future<void> downloadWallpaper(WallpaperInfo wallpaper) async {
     File file = wallpaper.file;
-    await _downloadFile(
-        wallpaper.mobileUrl, ConfigService.wallpaperCacheDir,
+    await _downloadFile(wallpaper.mobileUrl, ConfigService.wallpaperCacheDir,
         filename: file.name);
-  }
-
-  static String _formatMessage(String msg) {
-    var date = DateTime.now();
-    DateFormat format = DateFormat("yyyy-MM-dd @ HH:mm:ss");
-    return "[${format.format(date)}] $msg";
-  }
-
-  /// Logs the message to a local file in [ConfigService.publicDirectory]
-  static Future<void> logToFile(String message) async {
-    var dir = ConfigService.publicDirectory;
-    File file = File("${dir.path}/log.txt");
-
-    message = _formatMessage(message);
-
-    await file.writeAsString("$message\n", mode: FileMode.append);
-  }
-
-  /// Like [logToFile], but sync
-  static void logToFileSync(String message){
-    var dir = ConfigService.publicDirectory;
-    File file = File("${dir.path}/log.txt");
-    message = _formatMessage(message);
-    file.writeAsStringSync("$message\n", mode: FileMode.append);
-  }
-
-  /// Checks if the log file is too large an deletes line if so
-  static Future<void> checkLogFileSize() async {
-    var dir = ConfigService.publicDirectory;
-    File file = File("${dir.path}/log.txt");
-    var lines = await file.readAsLines();
-    int diff = lines.length - consts.LOG_FILE_LINES_LIMIT;
-    if(diff <= 0) return;
-
-    lines.removeRange(0, diff);
-
-    await file.writeAsString(lines.join("\n"), mode: FileMode.write);
-
-    getLogger().i("Deleted $diff lines from the log file");
   }
 
   /// Opens the given [url] in a browser window.
   static void openUrl(String url) {
     web.launchUrl(Uri.parse(url), mode: web.LaunchMode.externalApplication);
-  }
-
-  /// Opens the log file in the explorer
-  static Future<void> openLogFile() async {
-    String path = ConfigService.publicDirectory.path;
-
-    if (!(await File("$path/log.txt").exists())) {
-      await logToFile("This is the beginning of the log file.");
-    }
-
-    await OpenFile.open("$path/log.txt");
   }
 
   /// Hides the current snackbar
@@ -180,7 +73,8 @@ class Util {
   }
 
   /// Returns a list of files contained in the [directory] matching the [regExp]
-  static Future<List<FileSystemEntity>> listDir(Directory directory, {RegExp? regExp}) async{
+  static Future<List<FileSystemEntity>> listDir(Directory directory,
+      {RegExp? regExp}) async {
     final entities = await directory.list().toList();
     return (regExp == null
             ? entities
@@ -190,15 +84,14 @@ class Util {
   }
 
   static String tsToFormattedTime(int ts) {
-    DateTime date = DateTime.fromMillisecondsSinceEpoch(ts);
-    final DateFormat formatter = DateFormat('dd.MM.yyyy hh:mm:ss');
-    return formatter.format(date);
+    return DateTime.fromMillisecondsSinceEpoch(ts).formattedWithTime;
   }
 
   static String formatDay(DateTime day, {String format = "yyyy-MM-dd"}) {
     final DateFormat formatter = DateFormat(format);
     return formatter.format(day);
   }
+
   //
   // static DateTime normalizeDate(DateTime day) {
   //   var string = formatDay(day);

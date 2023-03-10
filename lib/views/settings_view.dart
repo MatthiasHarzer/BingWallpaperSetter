@@ -1,3 +1,5 @@
+import 'package:bing_wallpaper_setter/extensions/datetime.dart';
+import 'package:bing_wallpaper_setter/services/background_service.dart';
 import 'package:bing_wallpaper_setter/services/config_service.dart';
 import 'package:flutter/material.dart';
 import 'package:optimize_battery/optimize_battery.dart';
@@ -19,10 +21,9 @@ class _SettingsViewState extends State<SettingsView> {
   void _toggleDailyMode(bool enabled) async {
     ConfigService.dailyModeEnabled = enabled;
 
-    if(enabled){
+    if (enabled) {
       bool ignoreBatteryOptimizationGranted =
-      await _requestIgnoreBatteryOptimization();
-
+          await _requestIgnoreBatteryOptimization();
 
       if (!ignoreBatteryOptimizationGranted && mounted) {
         Util.showSnackBar(
@@ -38,17 +39,17 @@ class _SettingsViewState extends State<SettingsView> {
       }
     }
 
-    await WallpaperService.checkAndSetBackgroundTaskState();
+    await BackgroundService.checkAndScheduleTask();
 
     /// Update the wallpaper instant
-    if(enabled){
+    if (enabled) {
       await WallpaperService.updateWallpaperOnBackgroundTaskIntent();
     }
   }
 
   Future<bool> _requestIgnoreBatteryOptimization() async {
     final PermissionStatus status =
-    await Permission.ignoreBatteryOptimizations.status;
+        await Permission.ignoreBatteryOptimizations.status;
 
     if (status != PermissionStatus.granted) {
       if (await Permission.ignoreBatteryOptimizations.request() !=
@@ -68,13 +69,13 @@ class _SettingsViewState extends State<SettingsView> {
 
   /// Build an item with a single icon button
   Widget _buildIconButton({
-  required String title,
+    required String title,
     required VoidCallback onClick,
     required IconData icon,
     bool enabled = true,
     String? subtitle,
     String? tooltip,
-}){
+  }) {
     return ListTile(
       title: Text(title),
       subtitle: subtitle != null ? Text(subtitle) : null,
@@ -111,7 +112,6 @@ class _SettingsViewState extends State<SettingsView> {
               value: value,
               onChanged: onChanged,
             ),
-
           ],
         ),
       ),
@@ -251,30 +251,27 @@ class _SettingsViewState extends State<SettingsView> {
             child: Column(
               children: [
                 _buildIconButton(
-                  title: "Current Wallpaper Day",
-                  subtitle: ConfigService.currentWallpaperDay,
-                  onClick: (){
-                    setState(() {
-                      ConfigService.currentWallpaperDay = "";
-                    });
-                  },
-                  icon: Icons.delete,
-                  tooltip: "Delete Data",
-                  enabled: ConfigService.currentWallpaperDay.isNotEmpty
-                ),
+                    title: "Current Wallpaper Day",
+                    subtitle: ConfigService.currentWallpaperDay,
+                    onClick: () {
+                      setState(() {
+                        ConfigService.currentWallpaperDay = "";
+                      });
+                    },
+                    icon: Icons.delete,
+                    tooltip: "Delete Data",
+                    enabled: ConfigService.currentWallpaperDay.isNotEmpty),
                 _buildIconButton(
-                  title: "Newest Wallpaper Day",
-                  subtitle: ConfigService.newestWallpaperDay,
-                    onClick: (){
+                    title: "Newest Wallpaper Day",
+                    subtitle: ConfigService.newestWallpaperDay,
+                    onClick: () {
                       setState(() {
                         ConfigService.newestWallpaperDay = "";
                       });
                     },
                     icon: Icons.delete,
                     tooltip: "Delete Data",
-                    enabled: ConfigService.newestWallpaperDay.isNotEmpty
-
-                ),
+                    enabled: ConfigService.newestWallpaperDay.isNotEmpty),
                 ListTile(
                   title: const Text("Auto Region Locale"),
                   subtitle: Text(ConfigService.autoRegionLocale),
@@ -283,6 +280,17 @@ class _SettingsViewState extends State<SettingsView> {
                   title: const Text("Background Task Last Run"),
                   subtitle: Text(Util.tsToFormattedTime(
                       ConfigService.bgWallpaperTaskLastRun)),
+                ),
+                Visibility(
+                  visible: ConfigService.dailyModeEnabled,
+                  child: ListTile(
+                    title: const Text("Background Task Next Target Run"),
+                    subtitle: Text(
+                      DateTime(DateTime.now().year, DateTime.now().month,
+                              DateTime.now().day + 1)
+                          .formattedWithTime,
+                    ),
+                  ),
                 ),
               ],
             ),

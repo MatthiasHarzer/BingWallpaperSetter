@@ -3,16 +3,17 @@ import 'package:bing_wallpaper_setter/views/wallpaper_view.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import '../services/wallpaper_info.dart';
 import '../services/wallpaper_service.dart';
 
-class OldWallpapersView extends StatefulWidget {
-  const OldWallpapersView({Key? key}) : super(key: key);
+class WallpaperHistoryView extends StatefulWidget {
+  const WallpaperHistoryView({Key? key}) : super(key: key);
 
   @override
-  State<OldWallpapersView> createState() => _OldWallpapersViewState();
+  State<WallpaperHistoryView> createState() => _WallpaperHistoryViewState();
 }
 
-class _OldWallpapersViewState extends State<OldWallpapersView> {
+class _WallpaperHistoryViewState extends State<WallpaperHistoryView> {
   List<WallpaperInfo> wallpapers = [];
 
   @override
@@ -28,18 +29,19 @@ class _OldWallpapersViewState extends State<OldWallpapersView> {
   }
 
   void _openWallpaperDetailView(WallpaperInfo wallpaper, String heroTag) {
-    Navigator.of(context).push(MaterialPageRoute(builder: (BuildContext context) =>WallpaperView(
-      wallpaper: wallpaper,
-      heroTag: heroTag,
-    )));
-
+    Navigator.of(context).push(MaterialPageRoute(
+        builder: (BuildContext context) => WallpaperView(
+              wallpaper: wallpaper,
+              heroTag: heroTag,
+            )));
   }
 
-  Widget _buildWallpaperItem(WallpaperInfo wallpaper){
+  Widget _buildWallpaperItem(WallpaperInfo wallpaper) {
     final double width = MediaQuery.of(context).size.width;
     final double height = width / ConfigService.wallpaperResolutionAsDouble;
     return GestureDetector(
-      onTap: ()=>_openWallpaperDetailView(wallpaper, wallpaper.day.toString()),
+      onTap: () =>
+          _openWallpaperDetailView(wallpaper, wallpaper.day.toString()),
       child: Hero(
         tag: "hero-image-${wallpaper.day}",
         child: CachedNetworkImage(
@@ -68,11 +70,16 @@ class _OldWallpapersViewState extends State<OldWallpapersView> {
         backgroundColor: Colors.black38,
       ),
       body: SingleChildScrollView(
-
         child: Wrap(
           children: [
-            SizedBox(height: 80, child: Container(),),
-            ...wallpapers.map((wallpaper)=>_buildWallpaperItem(wallpaper)).toList()],
+            SizedBox(
+              height: 80,
+              child: Container(),
+            ),
+            ...wallpapers
+                .map((wallpaper) => _buildWallpaperItem(wallpaper))
+                .toList()
+          ],
         ),
       ),
     );

@@ -1,6 +1,6 @@
-import 'package:bing_wallpaper_setter/services/wallpaper_service.dart';
 import 'package:flutter/material.dart';
 
+import '../services/wallpaper_info.dart';
 import '../util/util.dart';
 
 /// The wallpaper info view. Shows title, copyright, etc
@@ -10,8 +10,6 @@ class WallpaperInfoView extends StatelessWidget {
 
   const WallpaperInfoView({Key? key, required this.wallpaper})
       : super(key: key);
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +23,10 @@ class WallpaperInfoView extends StatelessWidget {
         children: [
           Text(wallpaper.copyright),
           const Divider(),
-          Text(Util.formatDay(wallpaper.day, format: 'd. MMM yyyy'), style: TextStyle(color: Colors.grey[500]),),
+          Text(
+            Util.formatDay(wallpaper.day, format: 'd. MMM yyyy'),
+            style: TextStyle(color: Colors.grey[500]),
+          ),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [

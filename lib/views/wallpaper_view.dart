@@ -2,13 +2,14 @@ import 'package:bing_wallpaper_setter/services/wallpaper_service.dart';
 import 'package:bing_wallpaper_setter/theme.dart' as theme;
 import 'package:bing_wallpaper_setter/views/wallpaper_info_view.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../services/config_service.dart';
+import '../services/wallpaper_info.dart';
+import '../util/log.dart';
 import '../util/util.dart';
 
 typedef AsyncBoolCallback = Future<bool> Function();
@@ -33,6 +34,7 @@ class WallpaperView extends StatefulWidget {
 
 class _WallpaperViewState extends State<WallpaperView> {
   final _logger = getLogger();
+
   WallpaperInfo? get wallpaper => widget.wallpaper;
 
   /// Shows a scnackbar to inform the user, that the wallpaper hasn't loaded yet
@@ -80,7 +82,7 @@ class _WallpaperViewState extends State<WallpaperView> {
       WallpaperService.setWallpaper(wallpaper!, ConfigService.wallpaperScreen);
     } catch (e) {
       error = e;
-      await Util.logToFile(error.toString());
+      _logger.e(error.toString());
     }
 
     // Show the initial snack bar for at least 1s
@@ -113,7 +115,7 @@ class _WallpaperViewState extends State<WallpaperView> {
                   style: theme.snackBarLinkStyle,
                   recognizer: TapGestureRecognizer()
                     ..onTap = () async {
-                      await Util.openLogFile();
+                      await openLogFile();
                     }),
               const TextSpan(text: " file for detailed log.")
             ],
@@ -143,21 +145,20 @@ class _WallpaperViewState extends State<WallpaperView> {
     late bool success;
     try {
       success = await WallpaperService.saveToGallery(wallpaper!);
-    }catch(e){
+    } catch (e) {
       _logger.e("An error occurred saving the wallpaper to the gallery: $e");
       success = false;
     }
-    if(!mounted) return;
+    if (!mounted) return;
 
     if (success) {
       Util.showSnackBar(context,
           content: const Text("Successfully saved wallpaper to the gallery."));
-    }else{
-      Util.showSnackBar(context,
-          content: const Text("An error occurred saving the wallpaper."), action: SnackBarAction(
-              label: "TRY AGAIN",
-              onPressed: _saveWallpaper
-          ),
+    } else {
+      Util.showSnackBar(
+        context,
+        content: const Text("An error occurred saving the wallpaper."),
+        action: SnackBarAction(label: "TRY AGAIN", onPressed: _saveWallpaper),
       );
     }
   }

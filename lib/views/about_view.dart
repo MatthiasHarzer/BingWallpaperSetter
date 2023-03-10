@@ -2,6 +2,7 @@ import 'package:bing_wallpaper_setter/services/config_service.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
+import '../util/log.dart';
 import '../util/util.dart';
 
 class AboutView extends StatefulWidget {
@@ -38,7 +39,7 @@ class _AboutView extends State<AboutView> {
     versionTabs++;
 
     if (versionTabs >= 3) {
-      Util.openLogFile();
+      openLogFile();
       setState(() {
         versionTabs = 0;
         versionText = ConfigService.packageInfo.version;

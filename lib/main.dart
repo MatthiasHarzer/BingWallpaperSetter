@@ -1,53 +1,17 @@
+import 'package:bing_wallpaper_setter/services/background_service.dart';
 import 'package:bing_wallpaper_setter/services/config_service.dart';
+import 'package:bing_wallpaper_setter/services/wallpaper_info.dart';
 import 'package:bing_wallpaper_setter/services/wallpaper_service.dart';
+import 'package:bing_wallpaper_setter/util/log.dart';
 import 'package:bing_wallpaper_setter/util/util.dart';
 import 'package:bing_wallpaper_setter/views/about_view.dart';
-import 'package:bing_wallpaper_setter/views/old_wallpapers_view.dart';
 import 'package:bing_wallpaper_setter/views/settings_view.dart';
+import 'package:bing_wallpaper_setter/views/wallpaper_history_view.dart';
 import 'package:bing_wallpaper_setter/views/wallpaper_view.dart';
 import 'package:flutter/material.dart';
-import 'package:home_widget/home_widget.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:workmanager/workmanager.dart';
 
-import 'consts.dart' as consts;
 import 'drawer.dart';
-
-
-/// The callback dispatcher for the workmanager background isolate
-void workManagerCallbackDispatcher() {
-  Workmanager().executeTask((task, inputData) async {
-    await ConfigService.ensureInitialized();
-    var logger = getLogger();
-    try {
-      logger.i("---- Running background task $task ----");
-      switch (task) {
-        case consts.BG_WALLPAPER_TASK_ID:
-          if (!ConfigService.dailyModeEnabled) break;
-
-          await WallpaperService.updateWallpaperOnBackgroundTaskIntent();
-
-          ConfigService.bgWallpaperTaskLastRun =
-              DateTime.now().millisecondsSinceEpoch;
-      }
-    } catch (error) {
-      logger.e(error.toString());
-      return false;
-    }
-    logger.i("---- Finished background task -----");
-
-    return true;
-  });
-}
-
-/// The callback, when the widget was clicked
-Future<void> widgetBackgroundCallback(Uri? uri) async {
-  await ConfigService.ensureInitialized();
-
-  if (uri?.host == "updatewallpaper") {
-    await WallpaperService.updateWallpaperOnWidgetIntent();
-  }
-}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -55,13 +19,10 @@ void main() async {
   await ConfigService.ensureInitialized();
   WallpaperService.ensureMaxCacheWallpapers();
 
-  await Workmanager()
-      .initialize(workManagerCallbackDispatcher, isInDebugMode: false);
-  await WallpaperService.checkAndSetBackgroundTaskState();
+  BackgroundService.ensureInitialized();
+  await BackgroundService.checkAndScheduleTask();
 
-  HomeWidget.registerBackgroundCallback(widgetBackgroundCallback);
-
-  await Util.checkLogFileSize();
+  await checkLogFileSize();
 
   // var r = await getExternalStorageDirectories(type: StorageDirectory.pictures) ?? [];
   // for(var rr in r){
@@ -148,10 +109,11 @@ class _HomePageState extends State<HomePage> {
 
   // ignore: unused_element
   Future<bool> _requestExternalStoragePermission() async {
-
-    final PermissionStatus permission = await Permission.manageExternalStorage.status;
+    final PermissionStatus permission =
+        await Permission.manageExternalStorage.status;
     if (permission != PermissionStatus.granted) {
-      if (await Permission.manageExternalStorage.request() != PermissionStatus.granted) {
+      if (await Permission.manageExternalStorage.request() !=
+          PermissionStatus.granted) {
         return false;
       }
     }
@@ -160,7 +122,6 @@ class _HomePageState extends State<HomePage> {
 
   /// Requests storage permission. Returns whether permission is granted or not
   Future<bool> _requestStoragePermission() async {
-
     final PermissionStatus permission = await Permission.storage.status;
     if (permission != PermissionStatus.granted) {
       if (await Permission.storage.request() != PermissionStatus.granted) {
@@ -169,8 +130,6 @@ class _HomePageState extends State<HomePage> {
     }
     return true;
   }
-
-
 
   /// Checks for wallpaper updates and sets the wallpaper variable. Returns true if updated or false if now update is present
   Future<bool> _updateWallpaper() async {
@@ -208,11 +167,11 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _openOldWallpapersView() {
+  void _openWallpaperHistoryView() {
     Navigator.pop(context);
     Navigator.push(
       context,
-      Util.createScaffoldRoute(view: const OldWallpapersView()),
+      Util.createScaffoldRoute(view: const WallpaperHistoryView()),
     );
   }
 
@@ -225,7 +184,7 @@ class _HomePageState extends State<HomePage> {
         header: wallpaper?.copyright ?? "A Bing Image",
         onSettingsTap: _openSettingsView,
         onAboutTap: _openAboutView,
-        onOldWallpapersTab: _openOldWallpapersView,
+        onWallpaperHistoryTab: _openWallpaperHistoryView,
       ),
     );
   }

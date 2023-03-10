@@ -141,7 +141,6 @@ class _ExpandableFabState extends State<ExpandableFab>
             onPressed: _toggle,
             child: Icon(widget.icon, color: Colors.white, size: 40),
           ),
-
         ),
       ),
     );
@@ -191,13 +190,13 @@ class _ExpandingActionButton extends StatelessWidget {
 
 @immutable
 class ActionButton extends StatelessWidget {
-  const ActionButton({
-    Key? key,
-    this.onPressed,
-    required this.icon,
-    required this.color,
-    required this.backgroundColor
-  }) : super(key: key);
+  const ActionButton(
+      {Key? key,
+      this.onPressed,
+      required this.icon,
+      required this.color,
+      required this.backgroundColor})
+      : super(key: key);
 
   final VoidCallback? onPressed;
   final Widget icon;
@@ -206,7 +205,6 @@ class ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Material(
       shape: const CircleBorder(),
       clipBehavior: Clip.antiAlias,
